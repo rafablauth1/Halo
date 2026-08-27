@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                 QInputDialog, QScrollArea, QSplitter, QFrame,
                                 QHeaderView, QAbstractItemView, QSizePolicy)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QKeySequence
 
 from core.limits import list_available_methods, load_method, StandardMethod
 from core.trace import load_trace, Trace
@@ -306,11 +306,12 @@ class MainWindow(QMainWindow):
         pf_top.setSpacing(6)
         # recolher a coluna de controles deixa o espectro sozinho e
         # centralizado -- e o modo de olhar o traco, nao de configurar
-        self.painel_btn = QPushButton("◂ Painel")
-        self.painel_btn.setObjectName("ghost")
+        self.painel_btn = QPushButton("◂  Ocultar painel")
+        self.painel_btn.setObjectName("toggle")
         self.painel_btn.setCheckable(True)
+        self.painel_btn.setShortcut(QKeySequence("F9"))
         self.painel_btn.setToolTip(
-            "Recolhe a coluna de controles à esquerda.\n"
+            "Recolhe a coluna de controles à esquerda  (F9).\n"
             "Só o espectro fica na tela, ocupando a largura toda.")
         self.painel_btn.toggled.connect(self._on_painel_toggled)
         pf_top.addWidget(self.painel_btn)
@@ -330,10 +331,11 @@ class MainWindow(QMainWindow):
         png_btn.clicked.connect(self._export_png)
         pf_top.addWidget(png_btn)
         self.tabela_btn = QPushButton("Tabela  ▸")
-        self.tabela_btn.setObjectName("ghost")
+        self.tabela_btn.setObjectName("toggle")
         self.tabela_btn.setCheckable(True)
+        self.tabela_btn.setShortcut(QKeySequence("F10"))
         self.tabela_btn.setToolTip(
-            "Abre a tabela de picos ao lado do gráfico.\n"
+            "Abre a tabela de picos ao lado do gráfico  (F10).\n"
             "Fechada, o gráfico ocupa o painel inteiro.")
         self.tabela_btn.toggled.connect(self._on_tabela_toggled)
         pf_top.addWidget(self.tabela_btn)
@@ -450,7 +452,8 @@ class MainWindow(QMainWindow):
     def _on_painel_toggled(self, recolhido: bool):
         """Esconde/mostra a coluna de controles da esquerda."""
         self.sidebar.setVisible(not recolhido)
-        self.painel_btn.setText("▸ Painel" if recolhido else "◂ Painel")
+        self.painel_btn.setText("▸  Mostrar painel" if recolhido
+                                 else "◂  Ocultar painel")
 
     def _on_tabela_toggled(self, aberta: bool):
         """Abre/fecha o painel da tabela ao lado do grafico."""

@@ -481,6 +481,25 @@ QPushButton#compact {{
     font-weight: 700;
 }}
 
+/* botao de alternancia (mostrar/ocultar painel): precisa ser visivel
+   quando desligado -- se so aparecer depois de ligado, ninguem descobre
+   que existe. Ligado, fica preenchido na cor primaria. */
+QPushButton#toggle {{
+    background-color: {M3_SURFACE_HIGH};
+    color: {M3_ON_SURFACE_VARIANT};
+    border: 1px solid {M3_OUTLINE_MID};
+    border-radius: {SHAPE_SM}px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}}
+QPushButton#toggle:hover {{ color: {M3_ON_SURFACE}; border-color: {M3_PRIMARY}; }}
+QPushButton#toggle:checked {{
+    background-color: {M3_PRIMARY_CONTAINER};
+    color: {M3_ON_PRIMARY_CONTAINER};
+    border-color: {M3_PRIMARY};
+}}
+
 /* "text button": acao secundaria, sem peso visual */
 QPushButton#ghost {{
     background: transparent;
