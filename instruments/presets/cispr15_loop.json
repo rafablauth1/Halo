@@ -1,0 +1,91 @@
+{
+  "name": "CISPR 15 - Antena de loop (9 kHz - 30 MHz)",
+  "description": "Campo magnetico com antena de quadro de 2 m, 3 direcoes (Loop A/B/C).",
+  "receiver_mode": true,
+  "reset_before_config": true,
+  "display_update": true,
+  "scan_ranges": [
+    {
+      "enabled": true,
+      "band": "A",
+      "start_hz": 9000,
+      "stop_hz": 150000,
+      "rbw_hz": 200,
+      "step_hz": 100,
+      "meas_time_s": 1.0,
+      "detectors": [
+        "PK",
+        "QP"
+      ],
+      "attenuation_db": 10.0,
+      "attenuation_auto": true,
+      "preamp": false,
+      "note": "CISPR 16-1-1: RBW 200 Hz (6 dB) de 9 kHz a 150 kHz."
+    },
+    {
+      "enabled": true,
+      "band": "B",
+      "start_hz": 150000,
+      "stop_hz": 30000000,
+      "rbw_hz": 9000,
+      "step_hz": 4500,
+      "meas_time_s": 1.0,
+      "detectors": [
+        "PK",
+        "QP"
+      ],
+      "attenuation_db": 10.0,
+      "attenuation_auto": true,
+      "preamp": false,
+      "note": "CISPR 16-1-1: RBW 9 kHz (6 dB) de 150 kHz a 30 MHz."
+    }
+  ],
+  "rbw_filter_cispr": true,
+  "vbw_hz": null,
+  "vbw_auto": true,
+  "detectors": [
+    "PK",
+    "QP"
+  ],
+  "detector_trace_map": {
+    "PK": 1,
+    "QP": 2,
+    "AV": 3
+  },
+  "meas_time_s": 1.0,
+  "sweep_time_s": null,
+  "sweep_time_auto": true,
+  "sweep_points": null,
+  "sweep_count": 1,
+  "hold_time_s": 0.0,
+  "ref_level_dbuv": 100.0,
+  "ref_level_offset_db": 0.0,
+  "attenuation_db": 10.0,
+  "attenuation_auto": true,
+  "preamp": false,
+  "preamp_level_db": null,
+  "preselector": true,
+  "auto_range": true,
+  "level_unit": "DBUA",
+  "input_impedance_ohm": 50,
+  "input_coupling": "AC",
+  "noise_pulse_limiter": false,
+  "trace_mode": "MAXH",
+  "n_traces": 3,
+  "transducer_name": "",
+  "transducer_enabled": true,
+  "lisn_control": false,
+  "lisn_type": "ENV216",
+  "lisn_phase": "L1",
+  "lisn_pe_grounded": true,
+  "lisn_highpass_150k": false,
+  "final_measurement": true,
+  "final_meas_margin_db": 6.0,
+  "final_meas_max_peaks": 10,
+  "final_meas_detectors": [
+    "QP"
+  ],
+  "visa_resource": "GPIB0::20::INSTR",
+  "timeout_ms": 20000,
+  "notes": "CISPR 15 item 4.4.1 / item 9. Fator da antena loop deve estar carregado como transdutor no receiver ou como tabela de correcao no software."
+}

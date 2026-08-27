@@ -1,0 +1,45 @@
+{
+  "id": "cispr15_radiated_30_300",
+  "title": "CISPR 15 - Perturbacao radiada 30 MHz a 300 MHz (item 4.4.2)",
+  "standard_ref": "ABNT NBR IEC/CISPR 15/2014, item 4.4.2 - Perturbacao radiada, Anexo B",
+  "freq_range_hz": [
+    30000000,
+    300000000
+  ],
+  "x_axis": "log",
+  "notes": "Valores conforme as tabelas do relatorio de ensaio laboratório/relatório de ensaio de referência (itens 4.3.1 a 4.4.2 da norma). Na frequencia de transicao, aplica-se o limite inferior. Decrescimo log-linear na faixa de 30 a 100 MHz.",
+  "limit_lines": [
+    {
+      "name": "QP",
+      "detector": "QP",
+      "unit": "dBuV/m",
+      "interpolation": "log-linear",
+      "segments": [
+        {
+          "freq_start_hz": 30000000.0,
+          "freq_end_hz": 100000000.0,
+          "value_start": 64.0,
+          "value_end": 54.0,
+          "verified": true,
+          "note": "30 a 100 MHz: 64 a 54 dBuV/m QP. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 100000000.0,
+          "freq_end_hz": 230000000.0,
+          "value_start": 54.0,
+          "value_end": 54.0,
+          "verified": true,
+          "note": "100 a 230 MHz: 54 dBuV/m QP."
+        },
+        {
+          "freq_start_hz": 230000000.0,
+          "freq_end_hz": 300000000.0,
+          "value_start": 61.0,
+          "value_end": 61.0,
+          "verified": true,
+          "note": "230 a 300 MHz: 61 dBuV/m QP."
+        }
+      ]
+    }
+  ]
+}

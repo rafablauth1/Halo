@@ -1,0 +1,125 @@
+{
+  "id": "cispr15_mains_terminals_sem_eletrodos",
+  "title": "CISPR 15 - Terminais de alimentacao, lampadas SEM ELETRODOS (item 4.3.1 nota c)",
+  "standard_ref": "ABNT NBR IEC/CISPR 15/2014, item 4.3.1 - Tabela de tensao de perturbacao nos terminais de alimentacao",
+  "freq_range_hz": [
+    9000.0,
+    30000000.0
+  ],
+  "x_axis": "log",
+  "notes": "Valores conforme as tabelas do relatorio de ensaio laboratório/relatório de ensaio de referência (itens 4.3.1 a 4.4.2 da norma). Na frequencia de transicao, aplica-se o limite inferior. Decrescimo log-linear em 50-150 kHz e 150-500 kHz. Sem limite de detector Media (Average) abaixo de 150 kHz. Excecao do item 4.3.1 nota c da CISPR 15:2018 (ed. 9.0): 'Para equipamentos de iluminacao que incorporem exclusivamente lampadas sem eletrodos, o limite na faixa de 2,2 MHz a 3,0 MHz e de 73 dB(uV) quase-pico e 63 dB(uV) medio'. Transcrito da CISPR 15:2018 -- o escopo do laboratorio e a NBR IEC/CISPR 15/2014, entao CONFIRME esta nota na sua copia antes de usar em laudo.",
+  "limit_lines": [
+    {
+      "name": "QP",
+      "detector": "QP",
+      "unit": "dBuV",
+      "interpolation": "log-linear",
+      "segments": [
+        {
+          "freq_start_hz": 9000.0,
+          "freq_end_hz": 50000.0,
+          "value_start": 110.0,
+          "value_end": 110.0,
+          "verified": true,
+          "note": "0,009 a 0,05 MHz: 110 dBuV QP."
+        },
+        {
+          "freq_start_hz": 50000.0,
+          "freq_end_hz": 150000.0,
+          "value_start": 90.0,
+          "value_end": 80.0,
+          "verified": true,
+          "note": "0,05 a 0,15 MHz: 90 a 80 dBuV QP. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 150000.0,
+          "freq_end_hz": 500000.0,
+          "value_start": 66.0,
+          "value_end": 56.0,
+          "verified": true,
+          "note": "0,15 a 0,5 MHz: 66 a 56 dBuV QP. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 500000.0,
+          "freq_end_hz": 2200000.0,
+          "value_start": 56.0,
+          "value_end": 56.0,
+          "verified": true,
+          "note": "0,5 a 5 MHz: 56 dBuV QP."
+        },
+        {
+          "freq_start_hz": 2200000.0,
+          "freq_end_hz": 3000000.0,
+          "value_start": 73.0,
+          "value_end": 73.0,
+          "verified": false,
+          "note": "2,2 a 3,0 MHz: 73 dBuV QP -- excecao para lampadas sem eletrodos (CISPR 15:2018 item 4.3.1 nota c). CONFERIR na NBR/2014."
+        },
+        {
+          "freq_start_hz": 3000000.0,
+          "freq_end_hz": 5000000.0,
+          "value_start": 56.0,
+          "value_end": 56.0,
+          "verified": true,
+          "note": "0,5 a 5 MHz: 56 dBuV QP."
+        },
+        {
+          "freq_start_hz": 5000000.0,
+          "freq_end_hz": 30000000.0,
+          "value_start": 60.0,
+          "value_end": 60.0,
+          "verified": true,
+          "note": "5 a 30 MHz: 60 dBuV QP."
+        }
+      ]
+    },
+    {
+      "name": "AV",
+      "detector": "AV",
+      "unit": "dBuV",
+      "interpolation": "log-linear",
+      "segments": [
+        {
+          "freq_start_hz": 150000.0,
+          "freq_end_hz": 500000.0,
+          "value_start": 56.0,
+          "value_end": 46.0,
+          "verified": true,
+          "note": "0,15 a 0,5 MHz: 56 a 46 dBuV AV. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 500000.0,
+          "freq_end_hz": 2200000.0,
+          "value_start": 46.0,
+          "value_end": 46.0,
+          "verified": true,
+          "note": "0,5 a 5 MHz: 46 dBuV AV."
+        },
+        {
+          "freq_start_hz": 2200000.0,
+          "freq_end_hz": 3000000.0,
+          "value_start": 63.0,
+          "value_end": 63.0,
+          "verified": false,
+          "note": "2,2 a 3,0 MHz: 63 dBuV AV -- excecao para lampadas sem eletrodos (CISPR 15:2018 item 4.3.1 nota c). CONFERIR na NBR/2014."
+        },
+        {
+          "freq_start_hz": 3000000.0,
+          "freq_end_hz": 5000000.0,
+          "value_start": 46.0,
+          "value_end": 46.0,
+          "verified": true,
+          "note": "0,5 a 5 MHz: 46 dBuV AV."
+        },
+        {
+          "freq_start_hz": 5000000.0,
+          "freq_end_hz": 30000000.0,
+          "value_start": 50.0,
+          "value_end": 50.0,
+          "verified": true,
+          "note": "5 a 30 MHz: 50 dBuV AV."
+        }
+      ]
+    }
+  ]
+}

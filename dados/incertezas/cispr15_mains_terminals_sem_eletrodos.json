@@ -1,0 +1,6 @@
+{
+  "metodo_id": "cispr15_mains_terminals_sem_eletrodos",
+  "regra": "risco_compartilhado",
+  "faixas": [],
+  "observacoes": "Incertezas do relatorio de ensaio de referencia, k = 2,00. U de referencia da CISPR 16-4-2 a preencher."
+}

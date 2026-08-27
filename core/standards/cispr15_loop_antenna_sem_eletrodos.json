@@ -1,0 +1,61 @@
+{
+  "id": "cispr15_loop_antenna_sem_eletrodos",
+  "title": "CISPR 15 - Antena de loop, lampadas SEM ELETRODOS (item 4.4.1)",
+  "standard_ref": "ABNT NBR IEC/CISPR 15/2014, item 4.4.1 - Perturbacao radiada, antena de quadro de 2 m",
+  "freq_range_hz": [
+    9000.0,
+    30000000.0
+  ],
+  "x_axis": "log",
+  "notes": "Valores conforme as tabelas do relatorio de ensaio laboratório/relatório de ensaio de referência (itens 4.3.1 a 4.4.2 da norma). Na frequencia de transicao, aplica-se o limite inferior. Decrescimo log-linear em 70-150 kHz e 150 kHz-3 MHz. Medir nas 3 direcoes do campo (Loop A, B e C). Excecao: 39 dB(uA/m) entre 2,2 e 3,0 MHz para lampadas sem eletrodos (CISPR 15:2018). ATENCAO: a norma declara esse valor em dB(uA/m), enquanto esta tabela esta em dBuA (antena de loop de 2 m, como no relatorio do laboratório). Sao grandezas diferentes -- NAO use este segmento antes de resolver a unidade contra a sua copia da norma.",
+  "limit_lines": [
+    {
+      "name": "QP",
+      "detector": "QP",
+      "unit": "dBuA",
+      "interpolation": "log-linear",
+      "segments": [
+        {
+          "freq_start_hz": 9000.0,
+          "freq_end_hz": 70000.0,
+          "value_start": 88.0,
+          "value_end": 88.0,
+          "verified": true,
+          "note": "0,009 a 0,07 MHz: 88 dBuA."
+        },
+        {
+          "freq_start_hz": 70000.0,
+          "freq_end_hz": 150000.0,
+          "value_start": 88.0,
+          "value_end": 58.0,
+          "verified": true,
+          "note": "0,07 a 0,15 MHz: 88 a 58 dBuA. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 150000.0,
+          "freq_end_hz": 2200000.0,
+          "value_start": 58.0,
+          "value_end": 25.727161307940214,
+          "verified": true,
+          "note": "0,15 a 3 MHz: 58 a 22 dBuA. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 2200000.0,
+          "freq_end_hz": 3000000.0,
+          "value_start": 39.0,
+          "value_end": 39.0,
+          "verified": false,
+          "note": "2,2 a 3,0 MHz: 39 dB(uA/m) -- excecao para lampadas sem eletrodos. UNIDADE DIVERGENTE da tabela (dBuA): confirmar antes de usar."
+        },
+        {
+          "freq_start_hz": 3000000.0,
+          "freq_end_hz": 30000000.0,
+          "value_start": 22.0,
+          "value_end": 22.0,
+          "verified": true,
+          "note": "3 a 30 MHz: 22 dBuA."
+        }
+      ]
+    }
+  ]
+}

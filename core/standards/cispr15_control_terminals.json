@@ -1,0 +1,61 @@
+{
+  "id": "cispr15_control_terminals",
+  "title": "CISPR 15 - Terminais de controle (item 4.3.3)",
+  "standard_ref": "ABNT NBR IEC/CISPR 15/2014, item 4.3.3 - Tensao de perturbacao nos terminais de controle",
+  "freq_range_hz": [
+    150000,
+    30000000
+  ],
+  "x_axis": "log",
+  "notes": "Valores conforme as tabelas do relatorio de ensaio laboratório/relatório de ensaio de referência (itens 4.3.1 a 4.4.2 da norma). Os limites decrescem linearmente com o logaritmo da frequencia na faixa de 0,15 a 0,5 MHz.",
+  "limit_lines": [
+    {
+      "name": "QP",
+      "detector": "QP",
+      "unit": "dBuV",
+      "interpolation": "log-linear",
+      "segments": [
+        {
+          "freq_start_hz": 150000.0,
+          "freq_end_hz": 500000.0,
+          "value_start": 84.0,
+          "value_end": 74.0,
+          "verified": true,
+          "note": "0,15 a 0,5 MHz: 84 a 74 dBuV QP. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 500000.0,
+          "freq_end_hz": 30000000.0,
+          "value_start": 74.0,
+          "value_end": 74.0,
+          "verified": true,
+          "note": "0,5 a 30 MHz: 74 dBuV QP."
+        }
+      ]
+    },
+    {
+      "name": "AV",
+      "detector": "AV",
+      "unit": "dBuV",
+      "interpolation": "log-linear",
+      "segments": [
+        {
+          "freq_start_hz": 150000.0,
+          "freq_end_hz": 500000.0,
+          "value_start": 74.0,
+          "value_end": 64.0,
+          "verified": true,
+          "note": "0,15 a 0,5 MHz: 74 a 64 dBuV AV. O limite decresce linearmente com o logaritmo da frequencia nesta faixa."
+        },
+        {
+          "freq_start_hz": 500000.0,
+          "freq_end_hz": 30000000.0,
+          "value_start": 64.0,
+          "value_end": 64.0,
+          "verified": true,
+          "note": "0,5 a 30 MHz: 64 dBuV AV."
+        }
+      ]
+    }
+  ]
+}

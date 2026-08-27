@@ -1,0 +1,25 @@
+{
+  "metodo_id": "cispr15_mains_terminals",
+  "regra": "risco_compartilhado",
+  "faixas": [
+    {
+      "freq_min_hz": 9000,
+      "freq_max_hz": 150000,
+      "u_lab_db": 4.5,
+      "fator_k": 2.0,
+      "u_cispr_db": 0.0,
+      "item_norma": "4.3.1",
+      "mensurando": "Disturbios conduzidos"
+    },
+    {
+      "freq_min_hz": 150000,
+      "freq_max_hz": 30000000,
+      "u_lab_db": 4.4,
+      "fator_k": 2.0,
+      "u_cispr_db": 0.0,
+      "item_norma": "4.3.1",
+      "mensurando": "Disturbios conduzidos"
+    }
+  ],
+  "observacoes": "Incertezas do relatorio de ensaio de referencia, k = 2,00. U de referencia da CISPR 16-4-2 a preencher."
+}

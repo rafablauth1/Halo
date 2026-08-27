@@ -1,0 +1,91 @@
+{
+  "name": "laboratório - Anexo B 30-300 MHz",
+  "description": "Transcrito do RadiMation do laboratório. Prescan em pico, medicao final em QP com 15 s de observacao.",
+  "receiver_mode": true,
+  "reset_before_config": true,
+  "display_update": true,
+  "scan_ranges": [
+    {
+      "enabled": true,
+      "band": "C",
+      "start_hz": 30000000.0,
+      "stop_hz": 300000000.0,
+      "rbw_hz": 120000.0,
+      "step_hz": 100000.0,
+      "meas_time_s": 0.0005,
+      "detectors": [
+        "PK",
+        "QP",
+        "AV"
+      ],
+      "attenuation_db": 16.0,
+      "attenuation_auto": false,
+      "preamp": false,
+      "note": "Banda C · RBW 120 kHz · passo 100 kHz"
+    }
+  ],
+  "rbw_filter_cispr": true,
+  "vbw_hz": null,
+  "vbw_auto": true,
+  "detectors": [
+    "PK"
+  ],
+  "detector_trace_map": {
+    "PK": 1
+  },
+  "meas_time_s": 0.001,
+  "sweep_time_s": null,
+  "sweep_time_auto": true,
+  "sweep_points": null,
+  "sweep_count": 1,
+  "hold_time_s": 0.0,
+  "ref_level_dbuv": 80.0,
+  "ref_level_offset_db": 0.0,
+  "attenuation_db": 16.0,
+  "attenuation_auto": false,
+  "preamp": false,
+  "preamp_level_db": null,
+  "preselector": true,
+  "auto_range": true,
+  "level_unit": "DBUV",
+  "input_impedance_ohm": 50,
+  "input_coupling": "DC",
+  "noise_pulse_limiter": false,
+  "trace_mode": "MAXH",
+  "n_traces": 3,
+  "transducer_name": "",
+  "transducer_enabled": true,
+  "lisn_control": false,
+  "lisn_type": "ENV216",
+  "lisn_phase": "N",
+  "lisn_pe_grounded": true,
+  "lisn_highpass_150k": false,
+  "final_measurement": true,
+  "final_meas_margin_db": 15.0,
+  "final_meas_max_peaks": 10,
+  "final_meas_detectors": [
+    "QP"
+  ],
+  "final_meas_times": {
+    "PK": [
+      1.0,
+      5.0
+    ],
+    "AV": [
+      1.0,
+      5.0
+    ],
+    "QP": [
+      2.0,
+      15.0
+    ],
+    "RMS": [
+      1.0,
+      5.0
+    ]
+  },
+  "peak_discrimination": "None",
+  "visa_resource": "GPIB0::20::INSTR",
+  "timeout_ms": 20000,
+  "notes": "Limite: CISPR 15 Anexo B. Test Equipment: Anexo B_M3."
+}

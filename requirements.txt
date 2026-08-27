@@ -1,0 +1,7 @@
+PySide6>=6.5
+matplotlib>=3.7
+numpy>=1.24
+pandas>=2.0
+reportlab>=4.0
+pyvisa>=1.13
+pyvisa-py>=0.7

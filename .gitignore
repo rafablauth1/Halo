@@ -1,0 +1,33 @@
+# ---- ambiente Python ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ---- empacotamento (PyInstaller) ----
+build/
+dist/
+*.spec
+
+# ---- gerados em tempo de execucao ----
+# setas e marcas de selecao que o theme.py desenha na primeira execucao
+gui/_assets/
+
+# ---- REGISTROS REAIS DO LABORATORIO ----
+# O cadastro de equipamentos traz numero de serie, patrimonio e os dados
+# dos certificados de calibracao do LABELO. Este repositorio e publico,
+# entao esses arquivos ficam de fora de proposito.
+# Para levar o cadastro a outra maquina, copie a pasta na mao ou use
+#   git add -f dados/equipamentos
+# depois de tornar o repositorio privado.
+dados/equipamentos/
+
+# ---- saidas de ensaio ----
+relatorio_*.pdf
+grafico_*.png
+
+# ---- sistema operacional ----
+Thumbs.db
+desktop.ini
+.DS_Store
