@@ -16,6 +16,7 @@ from core.limits import list_available_methods, load_method, StandardMethod
 from core.trace import load_trace, Trace
 from core.corrections import CorrectionTable, list_available_corrections, load_correction
 from core.evaluation import evaluate, detect_peaks, EvaluationResult, PeakResult
+from core.final_measurement import MedicaoFinal
 from core.plotting import build_figure, BOX_ASPECT_LAUDO
 from core.report import generate_pdf_report, ReportInfo
 from gui import theme
@@ -75,6 +76,9 @@ class MainWindow(QMainWindow):
         self.results: list[EvaluationResult] = []
         self.incerteza = None
         self.peaks: list[PeakResult] = []
+        # resultado da medicao final (picos remedidos em QP/AV no receiver);
+        # quando existe, manda nos valores da tabela e do veredito
+        self.medicao_final: MedicaoFinal | None = None
         self.plot_theme = "dark"     # grafico da TELA; o do PDF e sempre claro
         self.cable_corr = CorrectionTable.flat("Cabo (manual)", 0.0)
         self.extra_corr = CorrectionTable.flat("LISN/Antena (manual)", 0.0)
@@ -378,6 +382,8 @@ class MainWindow(QMainWindow):
 
         self.receiver_tab = ReceiverTab(self)
         self.receiver_tab.trace_acquired.connect(self._on_trace_acquired)
+        self.receiver_tab.final_measurement_done.connect(self._on_final_measurement)
+        self.receiver_tab.provedor_de_picos = self._picos_para_medicao_final
         self.tabs.addTab(self.receiver_tab, "Receiver / GPIB")
 
         self.equip_tab = EquipamentosTab(self)
@@ -614,6 +620,7 @@ class MainWindow(QMainWindow):
     def _clear_traces(self):
         self.traces = {}
         self.trace = None
+        self.medicao_final = None   # pertence ao ensaio que acabou de sair
         self._update_file_label()
         self.footer.set_mensagem("Traces removidos.")
         self._refresh_plot()
@@ -700,6 +707,41 @@ class MainWindow(QMainWindow):
                                   theme.OK)
         self.tabs.setCurrentIndex(0)
         self._refresh_plot()
+
+    # ---------------- medicao final (picos remedidos no receiver) ----------
+    def _picos_para_medicao_final(self, margem_db: float,
+                                   max_picos: int) -> list[tuple[float, float]]:
+        """Frequencias que a aba Receiver deve remedir, com o nivel do prescan.
+
+        Sao os picos DENTRO DA MARGEM de algum limite -- o critério de
+        redução de dados. Não adianta remedir um pico 30 dB abaixo do
+        limite: ele já passou, e cada remedição custa segundos de bancada.
+        """
+        if self.trace is None or self.method is None:
+            return []
+        trace = self._corrected_trace()
+        picos = detect_peaks(trace, self.method,
+                              margin_db=margem_db,
+                              max_peaks=max_picos,
+                              detector_traces=self._corrected_traces(),
+                              regra_4_1=self.rule41_chk.isChecked())
+        return [(p.freq_hz, p.level) for p in picos]
+
+    def _on_final_measurement(self, resultado: MedicaoFinal):
+        """Recebe a medição final e refaz tabela, gráfico e veredito com ela."""
+        self.medicao_final = resultado
+        avisos = resultado.inconsistencias()
+        self.footer.set_mensagem(
+            resultado.resumo() + (f"  ⚠ {len(avisos)} inconsistência(s)" if avisos else ""),
+            theme.WARN if avisos else theme.OK)
+        self.tabs.setCurrentIndex(0)
+        self._refresh_plot()
+        if avisos:
+            QMessageBox.warning(
+                self, "Medição final com inconsistência",
+                "A medição final devolveu valores fisicamente impossíveis:\n\n"
+                + "\n".join(avisos)
+                + "\n\nConfira tempo de medição, atenuação e sobrecarga do receiver.")
 
     def _on_corr_changed(self):
         self.cable_spin.setEnabled(self.cable_combo.currentIndex() == 0)
@@ -832,11 +874,13 @@ class MainWindow(QMainWindow):
             self.results = evaluate(trace, self.method, incerteza=self.incerteza,
                                      detector_traces=outros, regra_4_1=regra41)
             self.peaks = detect_peaks(trace, self.method, detector_traces=outros,
-                                       regra_4_1=regra41)
+                                       regra_4_1=regra41,
+                                       medicao_final=self.medicao_final)
         fig = build_figure(trace, self.method, self.results,
                             detector_traces=self._corrected_traces(),
                             theme=self.plot_theme, show_title=False,
-                            box_aspect=BOX_ASPECT_LAUDO)
+                            box_aspect=BOX_ASPECT_LAUDO,
+                            medicao_final=self.medicao_final)
         self.canvas.show_figure(fig)
         # so "ESPECTRO": com o painel da tabela aberto o nome da norma
         # nao cabe e colide com os botoes. Ele ja esta no chip do
@@ -857,6 +901,14 @@ class MainWindow(QMainWindow):
         vereditos = [r.verdict for r in self.results]
         reprovados = [r for r in self.results if r.verdict.startswith("REPROVADO")]
         indet = [r for r in self.results if r.verdict.startswith("INDET")]
+
+        # Com medicao final, o veredito sai DELA. O prescan e feito em
+        # detector de pico, que le o maximo instantaneo: ele ultrapassar
+        # o limite de quase-pico nao reprova nada -- so diz onde remedir.
+        # Quem reprova e o valor medido com o detector de norma.
+        if self.medicao_final is not None and self.medicao_final.pontos:
+            self._veredito_por_medicao_final()
+            return
 
         n_fail = sum(1 for p in self.peaks if p.status == "Fail")
         n_ind = sum(1 for p in self.peaks if p.status == "Indet.")
@@ -888,6 +940,37 @@ class MainWindow(QMainWindow):
                 "ok", "APROVADO",
                 f"Menor folga {pior.detector}: {pior.worst_margin_db:+.1f} dB em "
                 f"{pior.worst_freq_hz/1e6:.3f} MHz  ·  {resumo}")
+            self.header.chip_veredito.set_valor("APROVADO", theme.OK)
+
+    def _veredito_por_medicao_final(self):
+        """Veredito baseado nos picos remedidos com o detector de norma."""
+        n_fail = sum(1 for p in self.peaks if p.status == "Fail")
+        n_ind = sum(1 for p in self.peaks if p.status == "Indet.")
+        remedidos = sum(1 for p in self.peaks if p.finais)
+        dets = ", ".join(self.medicao_final.detectores)
+        base = f"{remedidos} de {len(self.peaks)} pico(s) remedido(s) em {dets}"
+        if self.medicao_final.simulada:
+            base += "  ·  ⚠ MEDIÇÃO SIMULADA"
+
+        if n_fail:
+            pior = min((p for p in self.peaks if p.status == "Fail"),
+                        key=lambda p: min((d for d in p.diffs.values()
+                                            if d is not None), default=0))
+            excesso = max((d for d in pior.diffs.values() if d is not None), default=0.0)
+            self.verdict_bar.set_estado(
+                "fail", "REPROVADO (medição final)",
+                f"{n_fail} pico(s) acima do limite · pior em "
+                f"{pior.freq_hz/1e6:.3f} MHz, +{excesso:.1f} dB  ·  {base}")
+            self.header.chip_veredito.set_valor("REPROVADO", theme.FAIL)
+        elif n_ind:
+            self.verdict_bar.set_estado(
+                "warn", "INDETERMINADO",
+                f"{n_ind} pico(s) sem medição no detector próprio  ·  {base}")
+            self.header.chip_veredito.set_valor("INDETERMINADO", theme.WARN)
+        else:
+            self.verdict_bar.set_estado(
+                "ok", "APROVADO (medição final)",
+                f"Nenhum pico acima do limite  ·  {base}")
             self.header.chip_veredito.set_valor("APROVADO", theme.OK)
 
     def _evaluate(self):
@@ -925,7 +1008,11 @@ class MainWindow(QMainWindow):
 
         for row, peak in enumerate(self.peaks):
             values = [str(row + 1), _br(peak.freq_hz / 1e6, 3)]
+            # coluna -> detector, para saber depois quais vieram da
+            # medicao final (as colunas continuam iguais as do PDF)
+            col_det: dict[int, str] = {}
             for det in detectors:
+                col_det[len(values)] = det
                 values += [_br(peak.level_for(det), 1), _br(peak.limits.get(det), 1),
                            _br(peak.diffs.get(det), 1)]
             values.append(peak.status)
@@ -942,9 +1029,18 @@ class MainWindow(QMainWindow):
                 elif col > 1 and (col - 2) % 3 == 2 and text not in ("-", ""):
                     if not text.startswith("-"):
                         item.setForeground(theme.status_color("Fail"))
+                if col in col_det and col_det[col] in peak.finais:
+                    item.setFont(negrito)
+                    item.setToolTip(
+                        "Valor da MEDIÇÃO FINAL: remedido em frequência fixa "
+                        f"com o detector {col_det[col]}, e não lido do prescan.")
                 self.peak_table.setItem(row, col, item)
         self._ajustar_colunas(self.peak_table)
-        self.result_tabs.setTabText(0, f"Picos detectados ({len(self.peaks)})")
+        n_finais = sum(1 for p in self.peaks if p.finais)
+        titulo = f"Picos detectados ({len(self.peaks)})"
+        if n_finais:
+            titulo += f" · {n_finais} com medição final"
+        self.result_tabs.setTabText(0, titulo)
         self._atualizar_contador_tabela()
 
     def _refresh_table(self):
@@ -995,6 +1091,7 @@ class MainWindow(QMainWindow):
         out = generate_pdf_report(path, trace, self.method, results, info,
                                    detector_traces=outros,
                                    incerteza=self.incerteza,
-                                   regra_4_1=self.rule41_chk.isChecked())
+                                   regra_4_1=self.rule41_chk.isChecked(),
+                                   medicao_final=self.medicao_final)
         self.footer.set_mensagem(f"Relatório gerado: {out}", theme.OK)
         QMessageBox.information(self, "Relatório gerado", f"Salvo em: {out}")

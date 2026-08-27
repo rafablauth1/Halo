@@ -162,7 +162,8 @@ def build_figure(trace: Trace, method: StandardMethod, results: list[EvaluationR
                   detector_traces: dict[str, Trace] | None = None,
                   theme: str = "light",
                   show_title: bool = True,
-                  box_aspect: float | None = None) -> Figure:
+                  box_aspect: float | None = None,
+                  medicao_final=None) -> Figure:
     """`theme='light'` (padrao) = grafico do laudo, fundo branco.
     `theme='dark'` = so para a tela do programa.
 
@@ -204,7 +205,23 @@ def build_figure(trace: Trace, method: StandardMethod, results: list[EvaluationR
         ax.plot(xs, ys, "-", color=color, linewidth=tema["limit_lw"],
                 label=f"Limite {ll.detector} ({ll.unit})" + (" [NAO VERIFICADO]" if not ll.is_fully_verified() else ""))
 
-    for peak in detect_peaks(trace, method):
+    # Medicao final: pontos soltos, desenhados como marcadores. Ligar um
+    # ao outro com uma linha seria mentira -- nao houve medicao entre eles.
+    if medicao_final is not None and medicao_final.pontos:
+        marcas = {"QP": "o", "AV": "s", "CAV": "s", "PK": "^",
+                   "RMS": "D", "CRMS": "D"}
+        for det in medicao_final.detectores:
+            xs = [p.freq_hz for p in medicao_final.pontos if det in p.niveis]
+            ys = [p.niveis[det] for p in medicao_final.pontos if det in p.niveis]
+            if not xs:
+                continue
+            cor = tema["measured"].get(det, tema["measured_default"])
+            ax.plot(xs, ys, marcas.get(det, "o"), color=cor,
+                    markersize=6, markeredgecolor=tema["spine"],
+                    markeredgewidth=0.7, linestyle="none", zorder=6,
+                    label=f"Medicao final ({det})")
+
+    for peak in detect_peaks(trace, method, medicao_final=medicao_final):
         if peak.status == "Fail":
             ax.plot(peak.freq_hz, peak.level, "x", color=tema["fail_marker"],
                     markersize=tema["mark_size"],

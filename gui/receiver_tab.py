@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
                                 QTableWidget, QTableWidgetItem, QTabWidget,
                                 QMessageBox, QPlainTextEdit, QInputDialog,
                                 QHeaderView, QScrollArea, QSizePolicy,
-                                QSplitter)
+                                QSplitter, QProgressBar, QApplication)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
@@ -56,6 +56,7 @@ class ReceiverTab(QWidget):
     """Aba completa de configuracao do receiver."""
 
     trace_acquired = Signal(object)  # emite um core.trace.Trace apos varredura
+    final_measurement_done = Signal(object)  # emite um core.final_measurement.MedicaoFinal
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -64,6 +65,9 @@ class ReceiverTab(QWidget):
         self.model_path: Path | None = None
         self.preset_path: Path | None = None
         self._receiver = None  # instancia conectada (RohdeSchwarzEMIReceiver)
+        # a MainWindow instala aqui a funcao que devolve os picos da
+        # analise: fn(margem_db, max_picos) -> [(freq_hz, nivel_prescan)]
+        self.provedor_de_picos = None
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 4, 0, 0)
@@ -476,12 +480,144 @@ class ReceiverTab(QWidget):
         holder = QWidget()
         holder.setLayout(row)
         f.addRow("Detectores da medicao final", holder)
+        self.final_times: dict[str, tuple[QDoubleSpinBox, QDoubleSpinBox]] = {}
+        for det in ("QP", "AV", "CAV", "CRMS"):
+            linha = QHBoxLayout()
+            t_med = QDoubleSpinBox()
+            t_med.setRange(0.001, 60.0)
+            t_med.setDecimals(3)
+            t_med.setSingleStep(0.1)
+            t_med.setValue(1.0)
+            t_med.setSuffix(" s")
+            t_obs = QDoubleSpinBox()
+            t_obs.setRange(0.0, 300.0)
+            t_obs.setDecimals(1)
+            t_obs.setValue(0.0)
+            t_obs.setSuffix(" s")
+            linha.addWidget(QLabel("medição"))
+            linha.addWidget(t_med)
+            linha.addWidget(QLabel("observação"))
+            linha.addWidget(t_obs)
+            linha.addStretch(1)
+            cont = QWidget()
+            cont.setLayout(linha)
+            f.addRow(f"Tempos {det}", cont)
+            self.final_times[det] = (t_med, t_obs)
+
         f.addRow(QLabel(
-            "E o mesmo criterio descrito nos relatorios do laboratorio: os picos dentro de "
-            "6 dB do limite de quase-pico sao remedidos com o detector de norma."))
+            "Critério: os picos dentro da margem acima são remedidos com o detector de "
+            "norma, um a um, em frequência fixa. É este passo que faz o ensaio demorar "
+            "depois do gráfico — o prescan só diz ONDE olhar; o valor do laudo sai daqui."))
         l.addWidget(box)
+
+        exec_box = QGroupBox("Executar")
+        ex = QVBoxLayout(exec_box)
+        self.final_info = QLabel("—")
+        self.final_info.setWordWrap(True)
+        self.final_info.setStyleSheet(theme.CSS_MUTED)
+        ex.addWidget(self.final_info)
+        self.final_progress = QProgressBar()
+        self.final_progress.setVisible(False)
+        ex.addWidget(self.final_progress)
+        self.final_run_btn = QPushButton("Executar medição final nos picos da análise")
+        self.final_run_btn.setObjectName("primary")
+        self.final_run_btn.setMinimumHeight(36)
+        self.final_run_btn.clicked.connect(self._run_final_measurement)
+        ex.addWidget(self.final_run_btn)
+        l.addWidget(exec_box)
+
         l.addStretch(1)
         return self._wrap_scroll(w)
+
+    # ------------------------------------------------------- medicao final
+    def _detectores_finais(self) -> list[str]:
+        return [d for d, chk in self.final_det_checks.items() if chk.isChecked()]
+
+    def _tempos_finais(self) -> dict[str, tuple[float, float]]:
+        return {d: (m.value(), o.value()) for d, (m, o) in self.final_times.items()}
+
+    def _run_final_measurement(self):
+        """Remede, um a um, os picos que a aba Análise encontrou.
+
+        Os picos vem de la de proposito: sao os mesmos que estao na tabela e
+        no grafico, ja com as correcoes da cadeia aplicadas. Medir outro
+        conjunto de frequencias daria um laudo que nao bate com a tela."""
+        detectores = self._detectores_finais()
+        if not detectores:
+            QMessageBox.information(
+                self, "Escolha os detectores",
+                "Marque ao menos um detector (QP, AV…) para a medição final.")
+            return
+
+        if self.provedor_de_picos is None:
+            QMessageBox.warning(self, "Sem picos", "A aba Análise não está disponível.")
+            return
+        picos = self.provedor_de_picos(self.final_margin_spin.value(),
+                                        self.final_peaks_spin.value())
+        if not picos:
+            QMessageBox.information(
+                self, "Nenhum pico",
+                "A análise não tem picos dentro da margem escolhida.\n\n"
+                "Carregue um trace na aba Análise (ou faça a varredura) e confira "
+                "a margem abaixo do limite.")
+            return
+
+        freqs = [f for f, _ in picos]
+        prescan = {f: n for f, n in picos}
+
+        try:
+            rec = self._get_receiver()
+        except Exception as e:
+            QMessageBox.warning(self, "Sem instrumento", str(e))
+            return
+
+        self.final_progress.setVisible(True)
+        self.final_progress.setRange(0, len(freqs) * len(detectores))
+        self.final_run_btn.setEnabled(False)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        def progresso(i, total, freq, det):
+            self.final_progress.setValue(i)
+            if det:
+                self.final_info.setText(
+                    f"Medindo {freq/1e6:.3f} MHz em {det}…  ({i+1} de {total})")
+            QApplication.processEvents()   # a barra precisa respirar
+
+        try:
+            resultado = rec.run_final_measurement(
+                freqs, detectores,
+                tempos=self._tempos_finais(),
+                rbw_por_freq=self._rbw_para,
+                niveis_prescan=prescan,
+                progresso=progresso,
+                settle_s=0.05,
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Falha na medição final", str(e))
+            return
+        finally:
+            QApplication.restoreOverrideCursor()
+            self.final_run_btn.setEnabled(True)
+            self.final_progress.setVisible(False)
+
+        avisos = resultado.inconsistencias()
+        texto = resultado.resumo()
+        if avisos:
+            texto += "\n⚠ " + "\n⚠ ".join(avisos)
+            self.final_info.setStyleSheet(theme.CSS_FAIL)
+        else:
+            self.final_info.setStyleSheet(theme.CSS_MUTED)
+        self.final_info.setText(texto)
+        self.final_measurement_done.emit(resultado)
+
+    def _rbw_para(self, freq_hz: float) -> float:
+        """RBW da banda CISPR em que a frequencia cai -- a mesma que a
+        tabela de varredura usa, para a medicao final nao medir com uma
+        largura de banda diferente da do prescan."""
+        for banda in CISPR_BANDS.values():
+            if banda.freq_min_hz <= freq_hz <= banda.freq_max_hz:
+                return banda.rbw_hz
+        return 9_000.0
 
     def _build_scpi_tab(self) -> QWidget:
         w = QWidget()

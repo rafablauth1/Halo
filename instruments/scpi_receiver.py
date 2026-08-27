@@ -61,6 +61,9 @@ class RohdeSchwarzEMIReceiver:
         self.config = config
         self.model = config.model
         self.sent_commands: list[str] = []
+        # (frequencia, detector) da medicao em curso -- so o modo
+        # simulacao usa, para responder um nivel coerente ao marcador
+        self._sim_ctx: tuple[float, str] | None = None
         self._rm = None
         self._inst = None
 
@@ -132,6 +135,10 @@ class RohdeSchwarzEMIReceiver:
             return '0,"No error"'
         if low.startswith("*opc"):
             return "1"
+        # nivel do marcador na medicao final simulada
+        if "mark" in low and low.rstrip().endswith("?") and self._sim_ctx:
+            f, det = self._sim_ctx
+            return f"{self._simulated_level(f, det):.2f}"
         return "0"
 
     # ---------------- basicos ----------------
@@ -237,6 +244,141 @@ class RohdeSchwarzEMIReceiver:
         return Trace(freq_hz=freq_hz, level=values, unit=unit, detector=detector,
                      label=f"Live scan ({detector})",
                      meta={"idn": self.idn(), "resource": self.config.resource})
+
+    # ---------------- medicao final (pico a pico) ----------------
+    def tune_fixed(self, freq_hz: float, *, rbw_hz: float | None = None,
+                    detector: str = "QP", meas_time_s: float | None = None):
+        """Sintoniza o receiver numa frequencia unica, em span zero.
+
+        Span zero e o que transforma o instrumento de "varredura" em
+        "medidor numa frequencia": ele fica parado ali pelo tempo de
+        medicao, que e justamente o que o detector de quase-pico precisa
+        para carregar e descarregar."""
+        det = _DETECTOR_SCPI.get(detector.upper(), "QPE")
+        self._send("freq_center", value=freq_hz)
+        self._send("freq_span", value=0)
+        if rbw_hz is not None:
+            self._send("rbw", value=rbw_hz)
+        self._send("detector", trace=1, value=det)
+        if meas_time_s is not None:
+            self._send("meas_time", value=meas_time_s)
+
+    def read_level(self, freq_hz: float) -> float:
+        """Le UM nivel na frequencia sintonizada.
+
+        Tenta o marcador primeiro (`CALC:MARK1:Y?`), que e o caminho que
+        funciona tanto em receiver quanto em analisador. Se o modelo nao
+        declarar marcador, cai na leitura do traco e tira a media dos
+        pontos -- em span zero o traco inteiro e a mesma frequencia."""
+        if self._send("marker_on"):
+            self._send("marker_freq", value=freq_hz)
+        consulta = self._cmd("marker_level_query")
+        if consulta:
+            resposta = self._query(consulta)
+            try:
+                return float(resposta.split(",")[0])
+            except ValueError:
+                pass
+
+        dados = self._cmd("trace_data_query", trace=1)
+        if not dados:
+            raise RuntimeError(
+                f"O modelo {self.model.model if self.model else '?'} nao declara nem "
+                "'marker_level_query' nem 'trace_data_query'. Preencha um dos dois "
+                "em Receiver > Gerenciar modelos.")
+        bruto = self._query(dados)
+        valores = [float(v) for v in bruto.split(",") if v.strip() != ""]
+        if not valores:
+            raise RuntimeError("O instrumento devolveu um traco vazio na medicao final.")
+        return sum(valores) / len(valores)
+
+    def run_final_measurement(self, freqs_hz, detectores, *, tempos=None,
+                               rbw_por_freq=None, unidade: str = "dBuV",
+                               niveis_prescan=None, progresso=None,
+                               settle_s: float = 0.0) -> "MedicaoFinal":
+        """Remede cada frequencia de `freqs_hz` com cada detector.
+
+        E o passo que o RadiMation chama de *final measurement* e que faz o
+        ensaio "ficar calculando" depois do grafico: o prescan so aponta
+        ONDE olhar; o valor que vai para o laudo sai daqui.
+
+        `tempos` e {detector: (tempo_de_medicao_s, tempo_de_observacao_s)}.
+        O tempo de medicao e o que o instrumento fica integrando; o de
+        observacao e quanto tempo o operador acompanha para pegar emissao
+        que varia (flutuante). Sem valor definido, usa 1 s.
+
+        `progresso(i, total, freq, detector)` e chamado antes de cada
+        medicao -- serve para a barra de progresso da tela nao travar.
+
+        Devolve `MedicaoFinal`, nao um Trace: sao pontos soltos, nao curva.
+        """
+        from core.final_measurement import MedicaoFinal, PontoFinal
+
+        freqs = list(freqs_hz)
+        dets = [d.upper() for d in detectores]
+        tempos = dict(tempos or {})
+        niveis_prescan = dict(niveis_prescan or {})
+        total = len(freqs) * len(dets)
+
+        # o instrumento precisa estar parado para medir sob comando
+        self._send("init_continuous_off")
+
+        pontos: list[PontoFinal] = []
+        feitos = 0
+        for f in freqs:
+            ponto = PontoFinal(freq_hz=float(f),
+                                nivel_prescan=niveis_prescan.get(f))
+            for det in dets:
+                if progresso is not None:
+                    progresso(feitos, total, float(f), det)
+                t_med, t_obs = tempos.get(det, (1.0, 0.0))
+
+                rbw = rbw_por_freq(f) if callable(rbw_por_freq) else rbw_por_freq
+                self.tune_fixed(f, rbw_hz=rbw, detector=det, meas_time_s=t_med)
+
+                # espera a sintonia assentar antes de disparar (preseletor
+                # e atenuador levam alguns ms para comutar)
+                if settle_s and not self.config.dry_run:
+                    time.sleep(settle_s)
+
+                # tempo de observacao: o instrumento mede varias vezes e a
+                # gente fica com o maior valor visto na janela
+                fim = time.monotonic() + max(0.0, t_obs)
+                melhor = None
+                while True:
+                    self.run_scan(poll_timeout_s=max(30.0, t_med * 5 + 10))
+                    # read_level roda tambem na simulacao, de proposito: so
+                    # assim a sequencia registrada e a mesma que ira ao
+                    # instrumento, marcador incluido
+                    self._sim_ctx = (float(f), det)
+                    nivel = self.read_level(f)
+                    melhor = nivel if melhor is None else max(melhor, nivel)
+                    if time.monotonic() >= fim:
+                        break
+                ponto.niveis[det] = float(melhor)
+                feitos += 1
+            pontos.append(ponto)
+
+        if progresso is not None:
+            progresso(total, total, 0.0, "")
+
+        return MedicaoFinal(
+            pontos=pontos, detectores=dets, unidade=unidade,
+            instrumento=(self.model.model if self.model else ""),
+            simulada=self.config.dry_run,
+            tempos={d: tempos.get(d, (1.0, 0.0)) for d in dets},
+        )
+
+    def _simulated_level(self, freq_hz: float, detector: str) -> float:
+        """Nivel plausivel para o modo simulacao.
+
+        Respeita a ordem fisica dos detectores: pico >= quase-pico >= media.
+        Sem isso a simulacao produziria tabelas impossiveis e esconderia
+        erros de logica na hora de montar o relatorio."""
+        base = float(self._simulated_trace(detector="PK", unit="dBuV").value_at(freq_hz))
+        desconto = {"PK": 0.0, "QP": 3.5, "CAV": 8.0, "AV": 9.0,
+                     "RMS": 5.0, "CRMS": 6.5}.get(detector.upper(), 4.0)
+        return base - desconto
 
     def _simulated_trace(self, *, detector: str, unit: str,
                           start_hz: float = 9e3, stop_hz: float = 30e6,

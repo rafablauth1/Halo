@@ -97,7 +97,8 @@ class ReportInfo:
 def generate_pdf_report(out_path: str | Path, trace: Trace, method: StandardMethod,
                          results: list[EvaluationResult], info: ReportInfo,
                          detector_traces: dict[str, Trace] | None = None,
-                         incerteza=None, regra_4_1: bool = True) -> Path:
+                         incerteza=None, regra_4_1: bool = True,
+                         medicao_final=None) -> Path:
     """Gera o PDF do ensaio.
 
     `detector_traces` (opcional) leva um trace por detector -- ex.:
@@ -148,7 +149,10 @@ def generate_pdf_report(out_path: str | Path, trace: Trace, method: StandardMeth
 
     detectors = sorted({ll.detector for ll in method.limit_lines},
                         key=lambda d: (_DETECTOR_ORDER.get(d, 99), d))
+    # A medicao final manda nos valores: e ela que foi feita com o
+    # detector de norma, na frequencia exata. O prescan so localizou.
     peaks = detect_peaks(trace, method, detector_traces=detector_traces,
+                          medicao_final=medicao_final,
                           regra_4_1=regra_4_1)
 
     if not peaks:

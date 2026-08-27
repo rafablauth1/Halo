@@ -60,7 +60,21 @@ class ReceiverModel:
     commands: dict[str, str] = field(default_factory=dict)
 
     def command(self, key: str) -> Optional[str]:
-        cmd = self.commands.get(key, "")
+        """Comando SCPI deste modelo para `key`, ou None se nao houver.
+
+        A distincao entre AUSENTE e VAZIO importa:
+
+        * chave **vazia** ("") e uma decisao deliberada -- o modelo declara
+          que nao tem esse comando (ex.: `select_receiver_mode` nos ESHS/
+          ESCS analogicos). Continua devolvendo None, e nada e enviado.
+        * chave **ausente** cai no BASE_COMMANDS. E o que permite acrescentar
+          comandos novos ao catalogo sem ter que reescrever os 31 arquivos
+          JSON ja salvos -- eles simplesmente herdam o padrao SCPI.
+        """
+        if key in self.commands:
+            cmd = self.commands[key]
+            return cmd if cmd else None
+        cmd = BASE_COMMANDS.get(key, "")
         return cmd if cmd else None
 
 
@@ -125,6 +139,15 @@ BASE_COMMANDS: dict[str, str] = {
     "init_continuous_on": "INIT:CONT ON",
     "init_immediate": "INIT",
     "abort": "ABOR",
+
+    # --- medicao em frequencia fixa (medicao final, pico a pico) ---
+    # Sintonizar em span zero e ler o marcador e o jeito portatil de
+    # obter UM nivel numa frequencia: funciona em receiver dedicado e
+    # em analisador, ao contrario da funcao FMEas, que so existe na
+    # linha de topo.
+    "marker_on": "CALC:MARK1 ON",
+    "marker_freq": "CALC:MARK1:X {value}",
+    "marker_level_query": "CALC:MARK1:Y?",
 
     # --- consultas de eixo ---
     "query_sweep_points": "SWE:POIN?",

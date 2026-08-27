@@ -147,6 +147,11 @@ class PeakResult:
     # reprovacao -- e indeterminacao.
     indeterminados: list[str] = field(default_factory=list)
 
+    # Detectores cujo nivel veio da MEDICAO FINAL (remedido em frequencia
+    # fixa com o detector de norma), e nao do prescan. Sao esses os
+    # valores que valem para o laudo.
+    finais: list[str] = field(default_factory=list)
+
     def level_for(self, detector: str) -> float:
         return self.levels.get(detector, self.level)
 
@@ -172,7 +177,8 @@ def detect_peaks(trace: Trace, method: StandardMethod,
                   max_peaks: Optional[int] = None,
                   min_prominence_db: float = 10.0,
                   detector_traces: Optional[dict[str, Trace]] = None,
-                  regra_4_1: bool = True) -> list[PeakResult]:
+                  regra_4_1: bool = True,
+                  medicao_final=None) -> list[PeakResult]:
     """Encontra os picos de emissao do traco e avalia CADA UM contra o
     limite -- todos entram na tabela numerados, tanto os que passam quanto
     os que excedem o limite.
@@ -248,13 +254,24 @@ def detect_peaks(trace: Trace, method: StandardMethod,
         limits: dict[str, Optional[float]] = {}
         diffs: dict[str, Optional[float]] = {}
         indeterminados: list[str] = []
+        finais: list[str] = []
         status = "Pass"
         medido_por = (trace.detector or "").upper()
         for ll in method.limit_lines:
             det = ll.detector
             # nivel daquele detector: do trace proprio dele, se houver
+            # Precedencia: medicao final > trace proprio do detector >
+            # nivel do prescan. A medicao final e a medicao de norma --
+            # feita na frequencia exata, com o detector certo e o tempo
+            # certo -- entao ela manda em qualquer outro valor.
+            nivel_final = (medicao_final.nivel(f, det)
+                            if medicao_final is not None else None)
             det_trace = (detector_traces or {}).get(det)
-            if det_trace is not None:
+            if nivel_final is not None:
+                det_level = float(nivel_final)
+                por_regra_4_1 = False
+                finais.append(det)
+            elif det_trace is not None:
                 det_level = float(det_trace.value_at(f))
                 por_regra_4_1 = False
             else:
@@ -280,5 +297,6 @@ def detect_peaks(trace: Trace, method: StandardMethod,
                 diffs[det] = None
         results.append(PeakResult(freq_hz=f, level=lvl, levels=levels,
                                    limits=limits, diffs=diffs, status=status,
-                                   indeterminados=indeterminados))
+                                   indeterminados=indeterminados,
+                                   finais=finais))
     return results
