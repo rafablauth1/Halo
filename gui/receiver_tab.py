@@ -28,7 +28,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from gui import theme
-from gui.widgets import ListaSelecao
+from gui.widgets import ListaSelecao, area_rolavel
 
 from instruments.receiver_models import (list_available_receivers, load_receiver,
                                           ReceiverModel)
@@ -164,7 +164,7 @@ class ReceiverTab(QWidget):
         # ================= sub-abas de configuracao =================
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
-        self.tabs.setMinimumHeight(200)
+        self.tabs.setMinimumHeight(150)
 
         # Numa tela 1366x768 o bloco de cima (instrumento + conexao +
         # preset) ocupa ~355 px dos ~540 disponiveis e a tabela de
@@ -173,7 +173,12 @@ class ReceiverTab(QWidget):
         self.vsplit = QSplitter(Qt.Vertical)
         self.vsplit.setChildrenCollapsible(False)
         self.vsplit.setHandleWidth(8)
-        self.vsplit.addWidget(topo)
+        topo_scroll = area_rolavel(topo)
+        # 120 px de minimo: abaixo disso rola. Sem a area rolavel o
+        # bloco exigia 343 px e a janela inteira nao encolhia mais que
+        # 747 px de altura -- mais que a area util de uma tela 1366x768.
+        topo_scroll.setMinimumHeight(120)
+        self.vsplit.addWidget(topo_scroll)
         self.vsplit.addWidget(self.tabs)
         self.vsplit.setStretchFactor(0, 0)
         self.vsplit.setStretchFactor(1, 1)
@@ -222,7 +227,7 @@ class ReceiverTab(QWidget):
         self.scan_table.verticalHeader().setDefaultSectionSize(26)
         self.scan_table.setHorizontalHeaderLabels(SCAN_COLS)
         self.scan_table.horizontalHeader().setSectionResizeMode(len(SCAN_COLS) - 1, QHeaderView.Stretch)
-        self.scan_table.setMinimumHeight(210)
+        self.scan_table.setMinimumHeight(120)
         l.addWidget(self.scan_table, 1)
 
         btns = QHBoxLayout()

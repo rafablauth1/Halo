@@ -25,7 +25,7 @@ class PlotCanvas(FigureCanvasQTAgg):
         self.setParent(parent)
         # numa tela 1366x768 sobra pouca altura; 220 px ainda
         # mostra o grafico inteiro gracas as margens minimas
-        self.setMinimumHeight(220)
+        self.setMinimumHeight(160)
         self.setStyleSheet("background: transparent; border: none;")
 
     # Espaco minimo, em pixels, que precisa sobrar de cada lado dos eixos

@@ -65,9 +65,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(theme.WINDOW_TITLE)
         self.setWindowIcon(theme.app_icon())
         self.resize(1400, 900)
-        # Numa tela 1366x768 a area util maximizada tem ~690 px de
-        # altura -- um minimo de 700 empurraria conteudo para fora.
-        self.setMinimumSize(1024, 600)
+        # Minimo generoso o bastante para caber numa tela pequena e
+        # ainda permitir encolher a janela: o conteudo que nao couber
+        # passa a rolar, em vez de travar o redimensionamento.
+        self.setMinimumSize(880, 520)
 
         self.trace: Trace | None = None
         self.traces: dict[str, Trace] = {}   # um trace por detector
@@ -128,6 +129,25 @@ class MainWindow(QMainWindow):
         sidebar = area_rolavel(side_host, largura_min=370, largura_max=560)
         self.sidebar = sidebar
         splitter.addWidget(sidebar)
+
+        # Cabecalho da coluna, com a seta de recolher. O botao do
+        # cabecalho do grafico faz o mesmo, mas quem quer esconder a
+        # coluna procura o controle NA COLUNA, nao do outro lado da tela.
+        side_top = QHBoxLayout()
+        side_top.setContentsMargins(4, 0, 0, 0)
+        side_top.setSpacing(6)
+        titulo_lateral = QLabel("CONTROLES")
+        titulo_lateral.setObjectName("cardTitle")
+        side_top.addWidget(titulo_lateral)
+        side_top.addStretch(1)
+        self.painel_hide_btn = QPushButton("◂")
+        self.painel_hide_btn.setObjectName("compact")
+        self.painel_hide_btn.setFixedWidth(30)
+        self.painel_hide_btn.setToolTip("Ocultar esta coluna (F9)")
+        self.painel_hide_btn.clicked.connect(
+            lambda: self.painel_btn.setChecked(True))
+        side_top.addWidget(self.painel_hide_btn)
+        left.addLayout(side_top)
 
         method_box = QGroupBox("Método de ensaio")
         mbox_l = QVBoxLayout(method_box)
@@ -435,6 +455,7 @@ class MainWindow(QMainWindow):
         t.verticalHeader().setVisible(False)
         t.verticalHeader().setDefaultSectionSize(26)
         t.horizontalHeader().setMinimumHeight(56)
+        t.setMinimumHeight(90)
         t.horizontalHeader().setHighlightSections(False)
         t.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
         return t
