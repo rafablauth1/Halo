@@ -28,6 +28,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from gui import theme
+from gui.widgets import ListaSelecao
 
 from instruments.receiver_models import (list_available_receivers, load_receiver,
                                           ReceiverModel)
@@ -75,7 +76,10 @@ class ReceiverTab(QWidget):
         # ---- instrumento ----
         inst_box = QGroupBox("Instrumento (catálogo R&&S)")
         inst_l = QVBoxLayout(inst_box)
-        self.model_combo = QComboBox()
+        self.model_combo = ListaSelecao(com_filtro=True, altura_min=132)
+        # teto de altura: sem ele a lista cresce por cima do texto de
+        # informacao do modelo, logo abaixo dela
+        self.model_combo.setMaximumHeight(178)
         self.model_combo.currentIndexChanged.connect(self._on_model_changed)
         inst_l.addWidget(self.model_combo)
         self.model_info = QLabel("-")
@@ -86,12 +90,10 @@ class ReceiverTab(QWidget):
         self.model_info.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         self.model_info.setStyleSheet(theme.CSS_MUTED)
         inst_l.addWidget(self.model_info)
-        inst_l.addStretch(1)
         manage_btn = QPushButton("Gerenciar modelos…")
         manage_btn.setToolTip("Cadastro de modelos R&S e edicao dos comandos SCPI de cada um.")
         manage_btn.clicked.connect(self._manage_models)
         inst_l.addWidget(manage_btn)
-        inst_box.setMinimumHeight(150)
         top.addWidget(inst_box, 2)
 
         # ---- conexao ----
@@ -143,7 +145,7 @@ class ReceiverTab(QWidget):
         # ---- preset ----
         preset_box = QGroupBox("Preset de ensaio")
         preset_l = QVBoxLayout(preset_box)
-        self.preset_combo = QComboBox()
+        self.preset_combo = ListaSelecao(com_filtro=False, altura_min=132)
         self.preset_combo.currentIndexChanged.connect(self._on_preset_changed)
         preset_l.addWidget(self.preset_combo)
         pbtns = QHBoxLayout()
@@ -153,13 +155,12 @@ class ReceiverTab(QWidget):
             b.clicked.connect(slot)
             pbtns.addWidget(b)
         preset_l.addLayout(pbtns)
-        preset_l.addStretch(1)
         top.addWidget(preset_box, 2)
 
         # ================= sub-abas de configuracao =================
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
-        self.tabs.setMinimumHeight(260)
+        self.tabs.setMinimumHeight(200)
 
         # Numa tela 1366x768 o bloco de cima (instrumento + conexao +
         # preset) ocupa ~355 px dos ~540 disponiveis e a tabela de
@@ -172,7 +173,7 @@ class ReceiverTab(QWidget):
         self.vsplit.addWidget(self.tabs)
         self.vsplit.setStretchFactor(0, 0)
         self.vsplit.setStretchFactor(1, 1)
-        self.vsplit.setSizes([300, 420])
+        self.vsplit.setSizes([330, 360])
         root.addWidget(self.vsplit, 1)
         self.tabs.addTab(self._build_scan_tab(), "Frequência / Scan")
         self.tabs.addTab(self._build_detector_tab(), "Detector / Tempo")

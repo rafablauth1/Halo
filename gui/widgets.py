@@ -9,10 +9,11 @@ fonte e o mesmo raio de canto -- sem repetir estilo solto por ai.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QAbstractSpinBox, QComboBox, QFrame, QHBoxLayout,
-                                QLabel, QScrollArea, QSizePolicy, QSlider,
+                                QLabel, QLineEdit, QListWidget, QListWidgetItem,
+                                QScrollArea, QSizePolicy, QSlider,
                                 QTableWidget, QVBoxLayout, QWidget)
 
 from gui import theme
@@ -212,6 +213,99 @@ def desarmar_roda(raiz: QWidget) -> int:
         if isinstance(w, QAbstractSpinBox) and not w.text():
             w.interpretText()
     return n
+
+
+class ListaSelecao(QWidget):
+    """Lista sempre visível que se comporta como um QComboBox.
+
+    Numa tela de configuração de instrumento, esconder 31 modelos de
+    receiver dentro de um menu suspenso obriga o operador a abrir a lista
+    só para saber o que existe. Aqui os itens ficam à vista, com um campo
+    de filtro em cima.
+
+    Expõe a mesma API do QComboBox usada pelo resto do código
+    (`addItem`, `clear`, `currentIndex`, `setCurrentIndex`, `findData`,
+    `itemData`, `currentData`, `currentIndexChanged`), para poder ser
+    trocada no lugar de um combo sem reescrever quem o usa.
+    """
+
+    currentIndexChanged = Signal(int)
+
+    def __init__(self, com_filtro: bool = True, altura_min: int = 150, parent=None):
+        super().__init__(parent)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(6)
+
+        self._filtro = None
+        if com_filtro:
+            self._filtro = QLineEdit()
+            self._filtro.setPlaceholderText("filtrar…")
+            self._filtro.setClearButtonEnabled(True)
+            self._filtro.textChanged.connect(self._aplicar_filtro)
+            lay.addWidget(self._filtro)
+
+        self._lista = QListWidget()
+        self._lista.setMinimumHeight(altura_min)
+        # o minimo tem que valer para o widget inteiro, senao o layout
+        # espreme a lista ate sobrar uma linha so
+        self.setMinimumHeight(altura_min + (34 if com_filtro else 0))
+        self._lista.setTextElideMode(Qt.ElideRight)
+        self._lista.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._lista.currentRowChanged.connect(self._on_row)
+        lay.addWidget(self._lista, 1)
+
+    # ---- API compatível com QComboBox ----
+    def addItem(self, texto: str, dado=None):
+        item = QListWidgetItem(texto)
+        item.setData(Qt.UserRole, dado)
+        item.setToolTip(texto)
+        self._lista.addItem(item)
+
+    def clear(self):
+        self._lista.clear()
+
+    def count(self) -> int:
+        return self._lista.count()
+
+    def currentIndex(self) -> int:
+        return self._lista.currentRow()
+
+    def setCurrentIndex(self, i: int):
+        self._lista.setCurrentRow(i)
+        if 0 <= i < self._lista.count():
+            self._lista.scrollToItem(self._lista.item(i))
+
+    def itemData(self, i: int):
+        item = self._lista.item(i)
+        return item.data(Qt.UserRole) if item else None
+
+    def currentData(self):
+        return self.itemData(self.currentIndex())
+
+    def currentText(self) -> str:
+        item = self._lista.currentItem()
+        return item.text() if item else ""
+
+    def findData(self, dado) -> int:
+        for i in range(self._lista.count()):
+            if self.itemData(i) == dado:
+                return i
+        return -1
+
+    def blockSignals(self, on: bool):
+        self._lista.blockSignals(on)
+        return super().blockSignals(on)
+
+    # ---- interno ----
+    def _on_row(self, linha: int):
+        self.currentIndexChanged.emit(linha)
+
+    def _aplicar_filtro(self, texto: str):
+        alvo = texto.strip().lower()
+        for i in range(self._lista.count()):
+            item = self._lista.item(i)
+            item.setHidden(bool(alvo) and alvo not in item.text().lower())
 
 
 class FitTable(QTableWidget):

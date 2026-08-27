@@ -300,6 +300,16 @@ class MainWindow(QMainWindow):
         pf_l.setSpacing(8)
         pf_top = QHBoxLayout()
         pf_top.setSpacing(6)
+        # recolher a coluna de controles deixa o espectro sozinho e
+        # centralizado -- e o modo de olhar o traco, nao de configurar
+        self.painel_btn = QPushButton("◂ Painel")
+        self.painel_btn.setObjectName("ghost")
+        self.painel_btn.setCheckable(True)
+        self.painel_btn.setToolTip(
+            "Recolhe a coluna de controles à esquerda.\n"
+            "Só o espectro fica na tela, ocupando a largura toda.")
+        self.painel_btn.toggled.connect(self._on_painel_toggled)
+        pf_top.addWidget(self.painel_btn)
         self.plot_title = QLabel("ESPECTRO")
         self.plot_title.setObjectName("cardTitle")
         pf_top.addWidget(self.plot_title)
@@ -430,6 +440,11 @@ class MainWindow(QMainWindow):
         self.plot_theme = "light" if claro else "dark"
         self.theme_btn.setText("Fundo escuro" if claro else "Fundo claro")
         self._refresh_plot()
+
+    def _on_painel_toggled(self, recolhido: bool):
+        """Esconde/mostra a coluna de controles da esquerda."""
+        self.sidebar.setVisible(not recolhido)
+        self.painel_btn.setText("▸ Painel" if recolhido else "◂ Painel")
 
     def _on_tabela_toggled(self, aberta: bool):
         """Abre/fecha o painel da tabela ao lado do grafico."""
