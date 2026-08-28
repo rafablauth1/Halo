@@ -28,8 +28,10 @@ from gui.standards_manager import StandardsManagerDialog
 from gui.corrections_manager import CorrectionsManagerDialog
 from gui.receiver_tab import ReceiverTab
 from gui.equipamentos_tab import EquipamentosTab
+from gui.dispositivos_tab import DispositivosTab
 from core.equipamentos import (listar_equipamentos, carregar_equipamento,
                                 aplicar_cadeia)
+from core.dispositivos import GRUPOS
 from core.incerteza import REGRAS, carregar as carregar_incerteza, salvar as salvar_incerteza
 from gui.incerteza_dialog import IncertezaDialog
 
@@ -448,6 +450,14 @@ class MainWindow(QMainWindow):
             aviso.setStyleSheet(theme.CSS_FAIL)
             self.tabs.addTab(aviso, "EMC  ·  Imunidade")
 
+        # ---- Dispositivos: transversal, serve emissao e imunidade ----
+        # E a aba Devices do RadiMation. Nao fica dentro de nenhuma das
+        # duas secoes de ensaio porque o mesmo cabo, o mesmo atenuador e o
+        # mesmo certificado servem aos dois lados.
+        self.dispositivos_tab = DispositivosTab(self)
+        self.dispositivos_tab.catalogo_mudou.connect(self._refresh_chain_list)
+        self.tabs.addTab(self.dispositivos_tab, "Dispositivos")
+
         self._load_method()
         self.method_combo.currentIndexChanged.connect(self._load_method)
 
@@ -527,9 +537,14 @@ class MainWindow(QMainWindow):
         acao(m, "Incertezas e regra de decisão…", self._edit_uncertainty)
 
         # ---------------------------------------------------------- Correções
-        m = barra.addMenu("&Correções")
+        m = barra.addMenu("&Dispositivos")
+        acao(m, "Cadastro de dispositivos", ir(2), "Ctrl+D")
+        sub = m.addMenu("Ir para o grupo")
+        for _g in GRUPOS:
+            acao(sub, _g, (lambda g=_g: self._ir_grupo_dispositivo(g)))
+        m.addSeparator()
         acao(m, "Tabelas de correção…", self._manage_corrections)
-        acao(m, "Equipamentos e certificados…", ir(0, 2))
+        acao(m, "Equipamentos (cadastro antigo)…", ir(0, 2))
 
         # ----------------------------------------------------------- Exibir
         m = barra.addMenu("E&xibir")
@@ -560,6 +575,17 @@ class MainWindow(QMainWindow):
             a.setCheckable(True)
             a.setChecked(i == self.method_combo.currentIndex())
             a.triggered.connect(lambda _=False, k=i: self.method_combo.setCurrentIndex(k))
+
+    def _ir_grupo_dispositivo(self, grupo: str):
+        """Abre Dispositivos filtrando pelo grupo escolhido."""
+        self.tabs.setCurrentWidget(self.dispositivos_tab)
+        self.dispositivos_tab.filtro.clear()
+        arv = self.dispositivos_tab.arvore
+        for i in range(arv.topLevelItemCount()):
+            it = arv.topLevelItem(i)
+            it.setExpanded(it.text(0) == grupo.upper())
+            if it.text(0) == grupo.upper():
+                arv.scrollToItem(it)
 
     def _menu_medicao_final(self):
         """Leva para a sub-aba de medição final, já na seção certa."""

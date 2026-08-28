@@ -23,6 +23,7 @@ gui/_assets/
 #   git add -f dados/equipamentos
 # depois de tornar o repositorio privado.
 dados/equipamentos/
+dados/dispositivos/
 
 # ---- DADOS DE ENSAIO DA SECAO EMC ----
 # app.db traz projetos, EUTs e resultados reais; os arquivos de projeto e
