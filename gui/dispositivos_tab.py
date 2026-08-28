@@ -101,6 +101,15 @@ class DispositivosTab(QWidget):
             b.clicked.connect(slot)
             botoes.addWidget(b)
         esq_l.addLayout(botoes)
+
+        b_biblio = QPushButton("Restaurar biblioteca de fábrica")
+        b_biblio.setToolTip(
+            "Recria as fichas dos aparelhos que já vêm com o programa "
+            "(receptores R&&S e instrumentos da seção EMC).\n"
+            "Não mexe em ficha nenhuma que já exista — endereço, número de "
+            "série e certificados que você preencheu ficam como estão.")
+        b_biblio.clicked.connect(self._restaurar_biblioteca)
+        esq_l.addWidget(b_biblio)
         div.addWidget(esq)
 
         # ------------------------------ ficha ------------------------------
@@ -149,8 +158,48 @@ class DispositivosTab(QWidget):
         div.setStretchFactor(1, 1)
         div.setSizes([330, 900])
 
+        self._semear_se_vazio()
         self._montar_arvore()
         self._habilitar(False)
+
+    # -------------------------------------------------- biblioteca de fabrica
+    def _semear_se_vazio(self):
+        """Primeira execução numa máquina nova: monta o cadastro sozinho.
+
+        As fichas ficam em dados/dispositivos/, que é de propósito mantido
+        fora do repositório (traz número de série, patrimônio e certificados
+        do laboratório). Então num PC recém-clonado a pasta chega vazia, e
+        sem isto a aba abriria sem nenhum aparelho. A biblioteca de fábrica
+        é reconstruída a partir do que vem junto do programa; o que é do
+        laboratório continua tendo que ser copiado à mão."""
+        try:
+            if not todos():
+                migrar_tudo()
+        except Exception:
+            pass   # cadastro vazio é ruim, mas não impede a aba de abrir
+
+    def _restaurar_biblioteca(self):
+        try:
+            n = migrar_tudo()
+        except Exception as e:
+            QMessageBox.warning(self, "Restaurar biblioteca",
+                                f"Não deu para recriar as fichas:\n{e}")
+            return
+        total = sum(n.values())
+        self._montar_arvore()
+        if total:
+            self.catalogo_mudou.emit()
+            QMessageBox.information(
+                self, "Restaurar biblioteca",
+                f"{total} ficha(s) recriada(s):\n"
+                f"· {n['receivers']} receptor(es)\n"
+                f"· {n['instrumentos_emc']} instrumento(s) da seção EMC\n"
+                f"· {n['equipamentos']} equipamento(s) do laboratório")
+        else:
+            QMessageBox.information(
+                self, "Restaurar biblioteca",
+                "Nada a recriar — todas as fichas de fábrica já estão no "
+                "cadastro. As que você já tinha não foram alteradas.")
 
     # ------------------------------------------------------------ sub-abas
     def _aba_identificacao(self) -> QWidget:

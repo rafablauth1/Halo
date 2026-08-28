@@ -105,9 +105,34 @@ ensaio acreditado:
 
 ## Dados de laboratório
 
-O cadastro de equipamentos (`dados/equipamentos/`) **não está no
-repositório**: traz número de série, patrimônio e dados de certificados
-de calibração. Para levá-lo a outra máquina, copie a pasta manualmente.
+Nada que identifique o laboratório está no repositório. Estes ficam de
+fora de propósito, porque trazem número de série, patrimônio, dados de
+certificado de calibração e resultados de ensaio:
+
+| Pasta | O que tem |
+|---|---|
+| `dados/dispositivos/` | Cadastro único — endereço GPIB, comandos e certificados de cada aparelho |
+| `dados/equipamentos/` | Cadastro antigo de cabos, LISNs, antenas e atenuadores |
+| `data/app.db`, `data/projetos/` | Projetos, EUTs e resultados da seção EMC |
+| `reports/*.pdf`, `reports/*.docx` | Laudos emitidos |
+
+### Instalando em outra máquina
+
+O que vem junto do programa se reconstrói sozinho: na primeira abertura,
+a aba **Dispositivos** monta a biblioteca de fábrica (31 receptores R&S +
+3 instrumentos da seção EMC = 34 fichas). O banco da seção EMC também se
+cria vazio sozinho. Não é preciso copiar nada para o programa abrir e
+rodar em simulação.
+
+O que **não** se reconstrói é o que é do laboratório: os aparelhos
+cadastrados à mão, os números de série, os certificados e o histórico de
+ensaios. Para levar isso, copie as pastas da tabela acima na mão (pen
+drive ou rede) — o `git` não as carrega.
+
+O botão **Restaurar biblioteca de fábrica**, na aba Dispositivos, recria
+as fichas que vêm com o programa a qualquer momento. Ele nunca sobrescreve
+ficha existente: endereço, série e certificados já preenchidos ficam como
+estão.
 
 ---
 

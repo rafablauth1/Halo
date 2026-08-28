@@ -98,11 +98,46 @@ class RohdeSchwarzEMIReceiver:
             self.sent_commands.clear()
             return f"[SIMULACAO] {self.model.model if self.model else 'receiver generico'}"
         self._rm = pyvisa.ResourceManager()
-        self._inst = self._rm.open_resource(self.config.resource)
+        try:
+            self._inst = self._rm.open_resource(self.config.resource)
+        except Exception as e:
+            raise RuntimeError(self._explicar_falha(e)) from e
         self._inst.timeout = self.config.timeout_ms
         self._inst.write_termination = "\n"
         self._inst.read_termination = "\n"
         return self.idn()
+
+    def _explicar_falha(self, erro: Exception) -> str:
+        """Traduz a falha do VISA para o que precisa ser feito na maquina.
+
+        Sem NI-VISA instalado, o pyvisa cai calado no pyvisa-py, que nao
+        fala GPIB. O erro que ele devolve manda instalar gpib-ctypes, o que
+        e uma pista falsa em PC de laboratorio: ali a placa e NI (ou
+        Keysight) e o que falta e o driver VISA do fabricante."""
+        recurso = self.config.resource
+        try:
+            backend_py = "py" in str(self._rm.visalib).lower()
+        except Exception:
+            backend_py = False
+
+        if recurso.upper().startswith("GPIB") and backend_py:
+            return (
+                f"Nao foi possivel abrir {recurso}.\n\n"
+                "Este PC nao tem uma implementacao VISA instalada — o "
+                "programa caiu no pyvisa-py, que nao fala GPIB.\n\n"
+                "Instale o NI-VISA (ou o R&S VISA) e reinicie o programa. "
+                "Depois confira em NI MAX se a placa aparece como GPIB0 e "
+                "se o endereco bate com o da ficha do dispositivo.\n\n"
+                "Para trabalhar sem instrumento, marque Simulacao.\n\n"
+                f"(erro original: {erro})")
+        if recurso.upper().startswith("TCPIP"):
+            return (
+                f"Nao foi possivel abrir {recurso}.\n\n"
+                "Confira se o aparelho esta ligado na rede e se o IP da "
+                "ficha do dispositivo esta certo (no proprio aparelho: "
+                "Setup > Network).\n\n"
+                f"(erro original: {erro})")
+        return (f"Nao foi possivel abrir {recurso}.\n\n{erro}")
 
     def disconnect(self):
         if self._inst is not None:
