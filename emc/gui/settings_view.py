@@ -60,105 +60,25 @@ class SettingsView(QWidget):
         buzzer_hint.setWordWrap(True)
         layout.addWidget(buzzer_hint)
 
-        form = QFormLayout()
-
-        self.ucs_connection_combo = QComboBox()
-        self.ucs_connection_combo.addItem("GPIB", "gpib")
-        self.ucs_connection_combo.addItem("Serial (RS-232)", "serial")
-        index = self.ucs_connection_combo.findData(settings.ucs500n_connection)
-        if index >= 0:
-            self.ucs_connection_combo.setCurrentIndex(index)
-        self.ucs_connection_combo.currentIndexChanged.connect(self._on_ucs_connection_changed)
-        form.addRow("Conexão — EM TEST UCS 500N:", self.ucs_connection_combo)
-
-        self.ucs_addr_spin = QSpinBox()
-        self.ucs_addr_spin.setRange(1, 31)
-        self.ucs_addr_spin.setValue(settings.gpib_addresses["ucs500n"])
-        self.ucs_addr_spin.valueChanged.connect(
-            lambda v: settings.gpib_addresses.__setitem__("ucs500n", v)
+        # Endereço, placa, porta e tipo de conexão de cada aparelho saíram
+        # daqui: são campos da FICHA do dispositivo, na aba Dispositivos —
+        # como no RadiMation, onde o endereço pertence ao device driver e não
+        # a uma lista solta de configurações.
+        aviso_disp = QLabel(
+            "<b>Endereços e conexão dos aparelhos ficam na aba Dispositivos.</b><br>"
+            "Cada aparelho tem a sua ficha, com tipo, comandos, conexão, "
+            "certificado e a marca de validado contra o hardware. Esta tela "
+            "guarda só o que vale para o programa inteiro."
         )
-        form.addRow("Endereço GPIB — EM TEST UCS 500N:", self.ucs_addr_spin)
-        self._ucs_addr_label = form.labelForField(self.ucs_addr_spin)
+        aviso_disp.setWordWrap(True)
+        aviso_disp.setStyleSheet(
+            "padding:12px; border:1px solid #4a4c53; border-radius:6px;")
+        layout.addWidget(aviso_disp)
 
-        self.ucs_serial_spin = QSpinBox()
-        self.ucs_serial_spin.setRange(1, 99)
-        self.ucs_serial_spin.setPrefix("COM")
-        self.ucs_serial_spin.setValue(settings.serial_ports["ucs500n"])
-        self.ucs_serial_spin.valueChanged.connect(
-            lambda v: settings.serial_ports.__setitem__("ucs500n", v)
-        )
-        form.addRow("Porta serial — EM TEST UCS 500N:", self.ucs_serial_spin)
-        self._ucs_serial_label = form.labelForField(self.ucs_serial_spin)
+        botao_disp = QPushButton("Abrir Dispositivos  (Ctrl+D)")
+        botao_disp.clicked.connect(self._abrir_dispositivos)
+        layout.addWidget(botao_disp)
 
-        self.chroma_connection_combo = QComboBox()
-        self.chroma_connection_combo.addItem("GPIB", "gpib")
-        self.chroma_connection_combo.addItem("Serial (RS-232)", "serial")
-        index = self.chroma_connection_combo.findData(settings.chroma_connection)
-        if index >= 0:
-            self.chroma_connection_combo.setCurrentIndex(index)
-        self.chroma_connection_combo.currentIndexChanged.connect(self._on_chroma_connection_changed)
-        form.addRow("Conexão — Chroma 61501/61504:", self.chroma_connection_combo)
-
-        self.chroma_addr_spin = QSpinBox()
-        self.chroma_addr_spin.setRange(1, 30)
-        self.chroma_addr_spin.setValue(settings.gpib_addresses["chroma"])
-        self.chroma_addr_spin.valueChanged.connect(
-            lambda v: settings.gpib_addresses.__setitem__("chroma", v)
-        )
-        form.addRow("Endereço GPIB — Chroma 61501/61504:", self.chroma_addr_spin)
-        self._chroma_addr_label = form.labelForField(self.chroma_addr_spin)
-
-        self.chroma_serial_spin = QSpinBox()
-        self.chroma_serial_spin.setRange(1, 99)
-        self.chroma_serial_spin.setPrefix("COM")
-        self.chroma_serial_spin.setValue(settings.serial_ports["chroma"])
-        self.chroma_serial_spin.valueChanged.connect(
-            lambda v: settings.serial_ports.__setitem__("chroma", v)
-        )
-        form.addRow("Porta serial — Chroma 61501/61504:", self.chroma_serial_spin)
-        self._chroma_serial_label = form.labelForField(self.chroma_serial_spin)
-
-        self.counter_connection_combo = QComboBox()
-        self.counter_connection_combo.addItem("GPIB", "gpib")
-        self.counter_connection_combo.addItem("Serial (RS-232)", "serial")
-        index = self.counter_connection_combo.findData(settings.counter_connection)
-        if index >= 0:
-            self.counter_connection_combo.setCurrentIndex(index)
-        self.counter_connection_combo.currentIndexChanged.connect(self._on_counter_connection_changed)
-        form.addRow("Conexão — Contador Agilent 53131A:", self.counter_connection_combo)
-
-        self.counter_board_spin = QSpinBox()
-        self.counter_board_spin.setRange(0, 15)
-        self.counter_board_spin.setValue(settings.gpib_boards["agilent_53131a"])
-        self.counter_board_spin.valueChanged.connect(
-            lambda v: settings.gpib_boards.__setitem__("agilent_53131a", v)
-        )
-        form.addRow("Placa GPIB — Contador Agilent 53131A:", self.counter_board_spin)
-        self._counter_board_label = form.labelForField(self.counter_board_spin)
-
-        self.counter_addr_spin = QSpinBox()
-        self.counter_addr_spin.setRange(0, 30)
-        self.counter_addr_spin.setValue(settings.gpib_addresses["agilent_53131a"])
-        self.counter_addr_spin.valueChanged.connect(
-            lambda v: settings.gpib_addresses.__setitem__("agilent_53131a", v)
-        )
-        form.addRow("Endereço GPIB — Contador Agilent 53131A:", self.counter_addr_spin)
-        self._counter_addr_label = form.labelForField(self.counter_addr_spin)
-
-        self.counter_serial_spin = QSpinBox()
-        self.counter_serial_spin.setRange(1, 99)
-        self.counter_serial_spin.setPrefix("COM")
-        self.counter_serial_spin.setValue(settings.serial_ports["agilent_53131a"])
-        self.counter_serial_spin.valueChanged.connect(
-            lambda v: settings.serial_ports.__setitem__("agilent_53131a", v)
-        )
-        form.addRow("Porta serial — Contador Agilent 53131A:", self.counter_serial_spin)
-        self._counter_serial_label = form.labelForField(self.counter_serial_spin)
-
-        layout.addLayout(form)
-        self._on_ucs_connection_changed(self.ucs_connection_combo.currentIndex())
-        self._on_chroma_connection_changed(self.chroma_connection_combo.currentIndex())
-        self._on_counter_connection_changed(self.counter_connection_combo.currentIndex())
 
         layout.addWidget(
             QLabel(
@@ -323,37 +243,20 @@ class SettingsView(QWidget):
     def _on_sim_toggled(self, checked: bool) -> None:
         settings.simulation_mode = checked
 
+    def _abrir_dispositivos(self) -> None:
+        """Sobe a árvore de widgets até a janela e troca para Dispositivos."""
+        w = self
+        while w is not None:
+            if hasattr(w, "dispositivos_tab"):
+                w.tabs.setCurrentWidget(w.dispositivos_tab)
+                return
+            w = w.parent()
+
     def _on_buzzer_toggled(self, checked: bool) -> None:
         settings.buzzer_enabled = checked
 
-    def _on_ucs_connection_changed(self, _index: int) -> None:
-        connection = self.ucs_connection_combo.currentData()
-        settings.ucs500n_connection = connection
-        is_serial = connection == "serial"
-        self.ucs_addr_spin.setVisible(not is_serial)
-        self._ucs_addr_label.setVisible(not is_serial)
-        self.ucs_serial_spin.setVisible(is_serial)
-        self._ucs_serial_label.setVisible(is_serial)
 
-    def _on_chroma_connection_changed(self, _index: int) -> None:
-        connection = self.chroma_connection_combo.currentData()
-        settings.chroma_connection = connection
-        is_serial = connection == "serial"
-        self.chroma_addr_spin.setVisible(not is_serial)
-        self._chroma_addr_label.setVisible(not is_serial)
-        self.chroma_serial_spin.setVisible(is_serial)
-        self._chroma_serial_label.setVisible(is_serial)
 
-    def _on_counter_connection_changed(self, _index: int) -> None:
-        connection = self.counter_connection_combo.currentData()
-        settings.counter_connection = connection
-        is_serial = connection == "serial"
-        self.counter_board_spin.setVisible(not is_serial)
-        self._counter_board_label.setVisible(not is_serial)
-        self.counter_addr_spin.setVisible(not is_serial)
-        self._counter_addr_label.setVisible(not is_serial)
-        self.counter_serial_spin.setVisible(is_serial)
-        self._counter_serial_label.setVisible(is_serial)
 
     def _test_comm(self, instrument: str, driver_factory) -> None:
         status_labels = {
