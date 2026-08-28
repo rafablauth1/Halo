@@ -46,85 +46,95 @@ WINDOW_TITLE = f"{APP_NAME} — Ensaios de Emissão CISPR 15"
 # "Success" e "warning" nao existem como papel no M3; ficam definidos aqui
 # no mesmo formato (cor + container) para o resto seguir a mesma logica.
 
-# --- papeis primarios -------------------------------------------------------
-M3_PRIMARY = "#a6c8ff"
-M3_ON_PRIMARY = "#00315c"
-M3_PRIMARY_CONTAINER = "#004881"
-M3_ON_PRIMARY_CONTAINER = "#d3e3ff"
+# --- cor de acao -------------------------------------------------------------
+# Teal dessaturado. A escolha e deliberada: azul-claro saturado e a cor
+# padrao de todo framework moderno e nao diz nada sobre o programa. Num
+# software de instrumentacao a moldura e cinza e a COR FICA NO DADO --
+# traco, limite, aprovado/reprovado. O acento aparece so em selecao e foco.
+ACCENT = "#2fbfa8"
+ACCENT_ON = "#04211c"
+ACCENT_HI = "#45d4bd"
+ACCENT_LO = "#1c5f53"
+ACCENT_BG = "#123b34"
 
-M3_SECONDARY = "#bbc7db"
-M3_ON_SECONDARY = "#253140"
-M3_SECONDARY_CONTAINER = "#3b4857"
-M3_ON_SECONDARY_CONTAINER = "#d7e3f8"
+# --- superficies: grafite NEUTRO, sem tingimento azul -----------------------
+BG = "#141517"          # canvas
+SURFACE = "#1a1b1e"     # cartoes
+SURFACE_2 = "#212226"   # botoes, campos elevados
+SURFACE_3 = "#2b2c31"   # hover
+FIELD = "#0f1012"       # fundo de campo e de tabela
+FIELD_ALT = "#161719"   # linha alternada
 
-M3_TERTIARY = "#f0bb6d"        # o ambar do halo, como cor terciaria
-M3_ON_TERTIARY = "#452b00"
+BORDER = "#34363b"      # linhas de estrutura
+BORDER_2 = "#4a4c53"    # contorno de campo
 
-# --- superficies (escada de elevacao por tinta) -----------------------------
-M3_SURFACE = "#111318"
-M3_SURFACE_LOWEST = "#0c0e13"
-M3_SURFACE_LOW = "#191c20"
-M3_SURFACE_CONTAINER = "#1d2025"
-M3_SURFACE_HIGH = "#282a2f"
-M3_SURFACE_HIGHEST = "#33353a"
+TEXT = "#e6e7ea"
+TEXT_MUTED = "#9b9da4"
+TEXT_DIM = "#6b6d75"
 
-M3_ON_SURFACE = "#e2e2e9"
-M3_ON_SURFACE_VARIANT = "#c3c6cf"
-M3_OUTLINE = "#8d9199"
-M3_OUTLINE_VARIANT = "#43474e"
-# O outline-variant "de catalogo" (#43474e) e discreto demais para as
-# linhas que dao ESTRUTURA a tela -- borda de cartao, moldura e grade de
-# tabela, separadores. Essas usam um tom intermediario, que continua com
-# 1 px mas se enxerga.
-M3_OUTLINE_MID = "#5a5f69"
+GLOW = "#d9a441"        # a marca (o halo) -- so no logotipo
+GLOW_LO = "#a87c2c"
 
-# --- estados ----------------------------------------------------------------
-M3_ERROR = "#ffb4ab"
-M3_ERROR_CONTAINER = "#4e0002"
-M3_SUCCESS = "#7ddba3"
-M3_SUCCESS_CONTAINER = "#0d3623"
-M3_WARNING = "#ffd08a"
-M3_WARNING_CONTAINER = "#3d2c07"
+# --- estados: unica parte saturada da interface -----------------------------
+OK = "#4eae7a"
+OK_BG = "#12271c"
+FAIL = "#d95c5c"
+FAIL_BG = "#2e1516"
+WARN = "#d9a441"
+WARN_BG = "#2c2313"
+INFO = "#5b9dc4"
 
-# --- escala de formas (shape scale do M3, em px) ----------------------------
-SHAPE_XS = 4
-SHAPE_SM = 8
-SHAPE_MD = 12
-SHAPE_LG = 16
-SHAPE_FULL = 20       # botao "stadium" com 36-40 px de altura
+# --- paleta de realce -------------------------------------------------------
+# Cores fortes o bastante para identificar coisa a coisa num relance:
+# detector, banda, tipo de ensaio. A moldura continua cinza; a cor entra
+# nos elementos que carregam informacao.
+CHIPS = {
+    "teal":   ("#2fbfa8", "#0e332d"),
+    "azul":   ("#4a90e2", "#12283f"),
+    "roxo":   ("#8b6ff0", "#221b3d"),
+    "rosa":   ("#e879a6", "#3a1a28"),
+    "ambar":  ("#e8a33d", "#33240e"),
+    "verde":  ("#4eae7a", "#12291d"),
+    "vermelho": ("#d95c5c", "#331516"),
+    "cinza":  ("#9b9da4", "#232427"),
+}
 
-# ----------------------------------------------------------------------------
-# Nomes curtos usados pelo resto do programa (mapeados nos papeis acima).
-# ----------------------------------------------------------------------------
-BG = M3_SURFACE
-SURFACE = M3_SURFACE_LOW        # cartoes / caixas
-SURFACE_2 = M3_SURFACE_CONTAINER  # botoes, elementos elevados
-SURFACE_3 = M3_SURFACE_HIGH     # hover
-FIELD = M3_SURFACE_LOWEST       # fundo de campo de entrada / tabela
-FIELD_ALT = "#15181d"           # linha alternada de tabela
-BORDER = M3_OUTLINE_MID
-BORDER_2 = M3_OUTLINE           # contorno de campo (mais forte ainda)
+# Cor fixa por detector: o mesmo detector tem sempre a mesma cor na
+# interface inteira -- chip, tabela e legenda do grafico.
+COR_DETECTOR = {
+    "PK": "verde", "QP": "teal", "AV": "ambar",
+    "CAV": "rosa", "RMS": "azul", "CRMS": "roxo",
+}
 
-TEXT = M3_ON_SURFACE
-TEXT_MUTED = M3_ON_SURFACE_VARIANT
-TEXT_DIM = M3_OUTLINE
+# Cor por banda CISPR
+COR_BANDA = {"A": "roxo", "B": "azul", "C": "teal", "D": "verde", "E": "ambar"}
 
-ACCENT = M3_PRIMARY             # acao primaria (clara, texto escuro em cima)
-ACCENT_ON = M3_ON_PRIMARY
-ACCENT_HI = "#c8dcff"
-ACCENT_LO = M3_PRIMARY_CONTAINER
-ACCENT_BG = M3_PRIMARY_CONTAINER  # realce de fundo (chips, selecao)
 
-GLOW = "#ffb547"                # marca (o halo)
-GLOW_LO = "#c9832a"
+def cor_chip(nome: str) -> tuple[str, str]:
+    """(texto, fundo) do chip. Nome desconhecido cai em cinza."""
+    return CHIPS.get(nome, CHIPS["cinza"])
 
-OK = M3_SUCCESS
-OK_BG = M3_SUCCESS_CONTAINER
-FAIL = M3_ERROR
-FAIL_BG = M3_ERROR_CONTAINER
-WARN = M3_WARNING
-WARN_BG = M3_WARNING_CONTAINER
-INFO = "#8fd3e8"
+
+# --- escala de formas: cantos pequenos --------------------------------------
+# Cápsula (stadium) e a assinatura visual do Material 3 e destoa de
+# ferramenta tecnica. 4-8 px e o que Figma, editores de audio e software
+# de bancada usam.
+SHAPE_XS = 3
+SHAPE_SM = 5
+SHAPE_MD = 7
+SHAPE_LG = 10
+SHAPE_FULL = 5          # botao: retangular com canto suave, nao capsula
+
+# nomes M3 mantidos como apelido, para o QSS existente continuar valendo
+M3_PRIMARY, M3_ON_PRIMARY = ACCENT, ACCENT_ON
+M3_PRIMARY_CONTAINER, M3_ON_PRIMARY_CONTAINER = ACCENT_BG, "#a9ded8"
+M3_SECONDARY_CONTAINER, M3_ON_SECONDARY_CONTAINER = SURFACE_3, TEXT
+M3_SURFACE, M3_SURFACE_LOWEST, M3_SURFACE_LOW = BG, FIELD, SURFACE
+M3_SURFACE_CONTAINER, M3_SURFACE_HIGH, M3_SURFACE_HIGHEST = SURFACE_2, SURFACE_3, "#35363c"
+M3_ON_SURFACE, M3_ON_SURFACE_VARIANT = TEXT, TEXT_MUTED
+M3_OUTLINE, M3_OUTLINE_VARIANT, M3_OUTLINE_MID = BORDER_2, BORDER, BORDER
+M3_ERROR, M3_ERROR_CONTAINER = FAIL, FAIL_BG
+M3_TERTIARY = GLOW
 
 # Atalhos para setStyleSheet pontual em labels de status
 CSS_MUTED = f"color:{TEXT_MUTED}; font-size:11px;"
@@ -408,9 +418,9 @@ QGroupBox {{
     background-color: {M3_SURFACE_LOW};
     border: 1px solid {M3_OUTLINE_MID};
     border-radius: {SHAPE_MD}px;
-    margin-top: 14px;
-    padding: 15px 12px 12px 12px;
-    font-size: 11px;
+    margin-top: 13px;
+    padding: 14px 11px 11px 11px;
+    font-size: 10px;
     font-weight: 700;
 }}
 QGroupBox::title {{
@@ -418,11 +428,11 @@ QGroupBox::title {{
     subcontrol-position: top left;
     left: 12px;
     top: 2px;
-    padding: 3px 10px;
-    color: {M3_ON_PRIMARY_CONTAINER};
-    background-color: {M3_PRIMARY_CONTAINER};
-    border: none;
-    border-radius: {SHAPE_SM}px;
+    padding: 2px 9px;
+    color: {ACCENT};
+    background-color: {ACCENT_BG};
+    border: 1px solid {ACCENT}44;
+    border-radius: {SHAPE_XS}px;
 }}
 QFrame#card, QFrame#plotFrame {{
     background-color: {M3_SURFACE_LOW};
@@ -443,10 +453,10 @@ QPushButton {{
     background-color: {M3_SECONDARY_CONTAINER};
     color: {M3_ON_SECONDARY_CONTAINER};
     border: none;
-    border-radius: {SHAPE_FULL}px;
-    padding: 7px 16px;
-    min-height: 18px;
-    font-size: 12px;
+    border-radius: {SHAPE_SM}px;
+    padding: 5px 12px;
+    min-height: 17px;
+    font-size: 11px;
     font-weight: 600;
 }}
 QPushButton:hover {{ background-color: #48576a; }}
@@ -457,9 +467,10 @@ QPushButton#primary {{
     background-color: {M3_PRIMARY};
     color: {M3_ON_PRIMARY};
     border: none;
-    border-radius: {SHAPE_FULL}px;
-    padding: 9px 20px;
+    border-radius: {SHAPE_SM}px;
+    padding: 7px 16px;
     font-weight: 700;
+    font-size: 11px;
 }}
 QPushButton#primary:hover {{ background-color: {ACCENT_HI}; }}
 QPushButton#primary:pressed {{ background-color: #8fb6ee; }}
@@ -519,10 +530,10 @@ QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QDateEdit, QComb
     background-color: {M3_SURFACE_LOWEST};
     color: {M3_ON_SURFACE};
     border: 1px solid {M3_OUTLINE};
-    border-radius: {SHAPE_XS}px;
-    padding: 4px 9px;
-    min-height: 18px;
-    font-size: 12px;
+    border-radius: {SHAPE_SM}px;
+    padding: 3px 8px;
+    min-height: 17px;
+    font-size: 11px;
     selection-background-color: {M3_PRIMARY_CONTAINER};
     selection-color: {M3_ON_PRIMARY_CONTAINER};
 }}
@@ -531,8 +542,8 @@ QLineEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover, QDateEdit:hover, QComboBo
 }}
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QSpinBox:focus,
 QDoubleSpinBox:focus, QDateEdit:focus, QComboBox:focus, QComboBox:on {{
-    border: 2px solid {M3_PRIMARY};
-    padding: 3px 8px;
+    border: 1px solid {ACCENT};
+    background-color: #0c1615;
 }}
 QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QComboBox:disabled {{
     background-color: #16181c; color: {M3_OUTLINE}; border-color: {M3_OUTLINE_VARIANT};
@@ -604,10 +615,11 @@ QTabBar::tab {{
     color: {M3_ON_SURFACE_VARIANT};
     border: none;
     border-bottom: 3px solid transparent;
-    padding: 10px 18px;
+    padding: 8px 15px;
     margin-right: 2px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
+    letter-spacing: 0.4px;
 }}
 QTabBar::tab:hover {{ color: {M3_ON_SURFACE}; }}
 QTabBar::tab:selected {{ color: {M3_PRIMARY}; border-bottom: 3px solid {M3_PRIMARY}; }}
@@ -619,6 +631,7 @@ QTabWidget#mainTabs > QTabBar::tab {{
 
 /* --------------------------------------------------------------- tabelas */
 QTableWidget, QTableView {{
+    font-family: "Cascadia Mono", "Consolas", monospace;
     background-color: {M3_SURFACE_LOWEST};
     alternate-background-color: {FIELD_ALT};
     color: {M3_ON_SURFACE};
@@ -633,6 +646,7 @@ QTableWidget, QTableView {{
 QTableWidget::item, QTableView::item {{ padding: 4px 6px; border: none; }}
 QHeaderView {{ background: transparent; border: none; }}
 QHeaderView::section {{
+    font-family: "Segoe UI", sans-serif;
     background-color: {M3_SURFACE_CONTAINER};
     color: {M3_ON_SURFACE_VARIANT};
     padding: 7px 8px;
@@ -708,6 +722,48 @@ QLabel {{ background: transparent; font-size: 12px; }}
 /* --------------------------------------------------------- caixa de aviso */
 QMessageBox, QInputDialog {{ background-color: {M3_SURFACE_HIGH}; }}
 QMessageBox QLabel, QInputDialog QLabel {{ color: {M3_ON_SURFACE}; font-size: 12px; }}
+
+/* ------------------------------------------------------------ badges */
+QLabel#badge {{
+    border-radius: {SHAPE_XS}px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}}
+
+/* ------------------------------------- rotulo miudo acima do campo */
+QLabel#microLabel {{
+    color: {TEXT_DIM};
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    background: transparent;
+}}
+
+/* ------------------------------------------------ secao recolhivel */
+QFrame#secao {{
+    background-color: {SURFACE};
+    border: 1px solid {BORDER};
+    border-radius: {SHAPE_MD}px;
+}}
+QPushButton#secaoHeader {{
+    background-color: {SURFACE_2};
+    color: {TEXT_MUTED};
+    border: none;
+    border-bottom: 1px solid {BORDER};
+    border-top-left-radius: {SHAPE_MD}px;
+    border-top-right-radius: {SHAPE_MD}px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    padding: 7px 11px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+}}
+QPushButton#secaoHeader:hover {{ color: {TEXT}; background-color: {SURFACE_3}; }}
+QPushButton#secaoHeader:checked {{ color: {ACCENT}; }}
 
 /* ------------------------------------------------ faixa de veredito geral */
 QFrame#verdictBar {{ border-radius: {SHAPE_MD}px; border: 1px solid {M3_OUTLINE_MID}; }}

@@ -174,6 +174,153 @@ class VerdictBar(QFrame):
         self._sub.setText(subtitulo)
 
 
+class Badge(QLabel):
+    """Etiqueta colorida compacta.
+
+    Serve para identificar coisa a coisa num relance -- detector, banda
+    CISPR, origem do dado. A cor vem de `theme.CHIPS` e e a MESMA em toda
+    a interface: o que e âmbar no chip e âmbar na tabela e no grafico.
+    """
+
+    def __init__(self, texto: str, cor: str = "cinza", parent=None):
+        super().__init__(texto, parent)
+        self.setObjectName("badge")
+        self.setAlignment(Qt.AlignCenter)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.set_cor(cor)
+
+    def set_cor(self, cor: str):
+        frente, fundo = theme.cor_chip(cor)
+        self.setStyleSheet(
+            f"QLabel#badge {{ color:{frente}; background-color:{fundo}; "
+            f"border:1px solid {frente}55; border-radius:3px; "
+            f"padding:2px 7px; font-size:10px; font-weight:700; }}")
+
+
+class Ladrilho(QLabel):
+    """Quadrado colorido com uma letra -- o marcador de identidade que as
+    ferramentas de projeto usam na frente de cada item da lista. Aqui
+    identifica o tipo de ensaio (Conduzida, Loop, Irradiada) sem precisar
+    ler o nome inteiro."""
+
+    def __init__(self, letra: str, cor: str = "teal", lado: int = 26, parent=None):
+        super().__init__(letra[:1].upper(), parent)
+        self.setAlignment(Qt.AlignCenter)
+        self.setFixedSize(lado, lado)
+        self.set_cor(cor)
+
+    def set_cor(self, cor: str):
+        frente, fundo = theme.cor_chip(cor)
+        self.setStyleSheet(
+            f"color:{frente}; background-color:{fundo}; border:1px solid {frente}66; "
+            f"border-radius:6px; font-size:13px; font-weight:800;")
+
+
+class CampoRotulado(QWidget):
+    """Campo com o rótulo MIÚDO EM CIMA, não ao lado.
+
+    É o arranjo das ferramentas de projeto (Figma, Sketch, editores de
+    áudio): o nome do parâmetro em versalete pequeno e o valor logo
+    abaixo. Ganha-se densidade — várias propriedades cabem lado a lado
+    numa grade — e some a coluna de rótulos alinhados que come largura
+    num formulário tradicional.
+    """
+
+    def __init__(self, rotulo: str, campo: QWidget, dica: str = "", parent=None):
+        super().__init__(parent)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(3)
+        self.rotulo = QLabel(rotulo.upper())
+        self.rotulo.setObjectName("microLabel")
+        self.campo = campo
+        lay.addWidget(self.rotulo)
+        lay.addWidget(campo)
+        if dica:
+            self.setToolTip(dica)
+            campo.setToolTip(dica)
+
+
+class GradeCampos(QWidget):
+    """Grade de `CampoRotulado`, N por linha.
+
+    O padrão de 2 a 4 colunas é o que faz uma tela de configuração caber
+    sem virar uma lista vertical interminável."""
+
+    def __init__(self, colunas: int = 2, parent=None):
+        super().__init__(parent)
+        self._grade = QGridLayout(self)
+        self._grade.setContentsMargins(0, 0, 0, 0)
+        self._grade.setHorizontalSpacing(10)
+        self._grade.setVerticalSpacing(9)
+        self._colunas = colunas
+        self._n = 0
+
+    def add(self, rotulo: str, campo: QWidget, dica: str = "", span: int = 1):
+        item = CampoRotulado(rotulo, campo, dica)
+        linha, col = divmod(self._n, self._colunas)
+        if span > 1 and col + span > self._colunas:      # não cabe: pula linha
+            self._n += self._colunas - col
+            linha, col = divmod(self._n, self._colunas)
+        self._grade.addWidget(item, linha, col, 1, span)
+        self._n += span
+        return item
+
+    def add_linha_cheia(self, w: QWidget):
+        """Widget ocupando a linha inteira (botões, avisos)."""
+        if self._n % self._colunas:
+            self._n += self._colunas - (self._n % self._colunas)
+        linha = self._n // self._colunas
+        self._grade.addWidget(w, linha, 0, 1, self._colunas)
+        self._n += self._colunas
+        return w
+
+
+class Secao(QFrame):
+    """Cartão com cabeçalho clicável que recolhe o conteúdo.
+
+    Numa tela com muitos grupos, poder fechar os que não interessam vale
+    mais que qualquer ajuste de cor: o operador esconde o que já
+    configurou e fica só com o que está mexendo.
+    """
+
+    def __init__(self, titulo: str, aberta: bool = True, parent=None):
+        super().__init__(parent)
+        self.setObjectName("secao")
+        externo = QVBoxLayout(self)
+        externo.setContentsMargins(0, 0, 0, 0)
+        externo.setSpacing(0)
+
+        self._botao = QPushButton(f"▾  {titulo.upper()}")
+        self._botao.setObjectName("secaoHeader")
+        self._botao.setCheckable(True)
+        self._botao.setChecked(aberta)
+        self._botao.setCursor(Qt.PointingHandCursor)
+        self._botao.toggled.connect(self._alternar)
+        externo.addWidget(self._botao)
+
+        self._corpo = QWidget()
+        self.body = QVBoxLayout(self._corpo)
+        self.body.setContentsMargins(12, 10, 12, 12)
+        self.body.setSpacing(9)
+        externo.addWidget(self._corpo)
+
+        self._titulo = titulo
+        self._corpo.setVisible(aberta)
+
+    def _alternar(self, aberta: bool):
+        self._corpo.setVisible(aberta)
+        self._botao.setText(f"{'▾' if aberta else '▸'}  {self._titulo.upper()}")
+
+    def add(self, w: QWidget, stretch: int = 0):
+        self.body.addWidget(w, stretch)
+        return w
+
+    def add_layout(self, l):
+        self.body.addLayout(l)
+        return l
+
+
 class RodaSoComFoco(QObject):
     """Impede que combo/spin/slider "roubem" a roda do mouse.
 

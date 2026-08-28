@@ -260,7 +260,11 @@ def build_figure(trace: Trace, method: StandardMethod, results: list[EvaluationR
     # Fracao de altura reservada acima dos eixos (titulo + legenda). Sem
     # titulo sobra area util para o traco. O PlotCanvas le este valor ao
     # refazer as margens depois de redimensionar.
-    fig.halo_top = 0.84 if show_title else 0.91
+    # A legenda cresce com o numero de tracos: 3 detectores + 2 limites
+    # dao duas linhas, que invadiam a area do grafico. Reserva por linha.
+    n_itens = len(leg.get_texts())
+    linhas_leg = max(1, -(-n_itens // 3))
+    fig.halo_top = (0.84 if show_title else 0.93) - 0.035 * (linhas_leg - 1)
     fig.tight_layout(rect=(0, 0, 1, 1.0))
     fig.subplots_adjust(top=fig.halo_top)
     return fig

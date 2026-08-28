@@ -20,8 +20,8 @@ from core.final_measurement import MedicaoFinal
 from core.plotting import build_figure, BOX_ASPECT_LAUDO
 from core.report import generate_pdf_report, ReportInfo
 from gui import theme
-from gui.widgets import (AppHeader, AppFooter, FitTable, VerdictBar,
-                          area_rolavel, desarmar_roda)
+from gui.widgets import (AppHeader, AppFooter, Badge, FitTable, Ladrilho,
+                          VerdictBar, area_rolavel, desarmar_roda)
 from gui.plot_canvas import PlotCanvas
 from gui.limit_editor import LimitEditorDialog
 from gui.standards_manager import StandardsManagerDialog
@@ -154,7 +154,12 @@ class MainWindow(QMainWindow):
         mbox_l.setSpacing(7)
         self.method_combo = self._elastico(QComboBox())
         self._fill_method_combo()
-        mbox_l.addWidget(self.method_combo)
+        linha_metodo = QHBoxLayout()
+        linha_metodo.setSpacing(8)
+        self.method_tile = Ladrilho("C", "teal", 30)
+        linha_metodo.addWidget(self.method_tile)
+        linha_metodo.addWidget(self.method_combo, 1)
+        mbox_l.addLayout(linha_metodo)
         self.method_info = QLabel("—")
         self.method_info.setWordWrap(True)
         self.method_info.setStyleSheet(theme.CSS_DIM)
@@ -192,6 +197,11 @@ class MainWindow(QMainWindow):
         hint.setWordWrap(True)
         hint.setStyleSheet(theme.CSS_DIM)
         fbox_l.addWidget(hint)
+        self.det_badges = QHBoxLayout()
+        self.det_badges.setSpacing(5)
+        self.det_badges.setContentsMargins(0, 2, 0, 2)
+        self.det_badges.addStretch(1)
+        fbox_l.addLayout(self.det_badges)
         self.file_label = QLabel("Nenhum trace carregado")
         self.file_label.setWordWrap(True)
         self.file_label.setStyleSheet(theme.CSS_MUTED)
@@ -535,6 +545,9 @@ class MainWindow(QMainWindow):
         self.method_info.setText(texto)
         self.header.chip_norma.set_valor(
             _METHOD_LABELS.get(self.method.id, self.method.id))
+        letra, cor = self._TIPO_LADRILHO.get(self.method.id, ("?", "cinza"))
+        self.method_tile.setText(letra)
+        self.method_tile.set_cor(cor)
 
     def _edit_limits(self):
         if self.method is None:
@@ -675,6 +688,40 @@ class MainWindow(QMainWindow):
         self.header.chip_traces.set_valor(
             " · ".join(sorted(self.traces, key=lambda d: self._PRIMARIO.index(d)
                               if d in self._PRIMARIO else 99)), theme.TEXT)
+        self._atualizar_badges_detector()
+
+    _TIPO_LADRILHO = {
+        "cispr15_mains_terminals": ("C", "teal"),
+        "cispr15_mains_terminals_sem_eletrodos": ("C", "azul"),
+        "cispr15_load_terminals": ("L", "verde"),
+        "cispr15_control_terminals": ("K", "ambar"),
+        "cispr15_loop_antenna": ("H", "roxo"),
+        "cispr15_loop_antenna_sem_eletrodos": ("H", "rosa"),
+        "cispr15_radiated_30_300": ("R", "vermelho"),
+    }
+
+    def _atualizar_badges_detector(self):
+        """Uma etiqueta colorida por detector carregado. Cor fixa por
+        detector, a mesma da tabela e da legenda do grafico."""
+        # Remove SO os widgets. Tirar o item esticavel junto faria as
+        # badges se esticarem para preencher a caixa -- uma delas
+        # cobria o cartao inteiro com a propria cor de fundo.
+        for i in reversed(range(self.det_badges.count())):
+            item = self.det_badges.itemAt(i)
+            if item is not None and item.widget() is not None:
+                item.widget().setParent(None)
+        ordem = [d for d in self._PRIMARIO if d in self.traces]
+        for det in ordem:
+            b = Badge(det, theme.COR_DETECTOR.get(det, "cinza"))
+            t = self.traces[det]
+            marca = "  (principal)" if t is self.trace else ""
+            b.setToolTip(f"{det}{marca} — {len(t.freq_hz)} pontos, "
+                          f"{t.freq_hz.min()/1e3:.1f} kHz a {t.freq_hz.max()/1e6:.2f} MHz")
+            self.det_badges.insertWidget(self.det_badges.count() - 1, b, 0, Qt.AlignLeft)
+        if self.medicao_final is not None and self.medicao_final.pontos:
+            mf = Badge("MED. FINAL", "verde")
+            mf.setToolTip(self.medicao_final.resumo())
+            self.det_badges.insertWidget(self.det_badges.count() - 1, mf, 0, Qt.AlignLeft)
 
     def _load_sample(self):
         sample_dir = Path(__file__).parent.parent / "data"
