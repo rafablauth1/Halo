@@ -28,7 +28,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from gui import theme
-from gui.widgets import ListaSelecao, area_rolavel
+from gui.widgets import (Badge, GradeCampos, ListaSelecao, Secao, area_rolavel)
 
 from instruments.receiver_models import (list_available_receivers, load_receiver,
                                           ReceiverModel)
@@ -101,49 +101,76 @@ class ReceiverTab(QWidget):
         top.addWidget(inst_box, 2)
 
         # ---- conexao ----
+        # Grade de 3 colunas com o rotulo miudo em cima do campo, em vez de
+        # seis linhas empilhadas com a coluna de rotulos a esquerda. Cabe na
+        # metade da altura e nao gasta largura alinhando texto.
         conn_box = QGroupBox("Conexão (GPIB / VISA)")
-        conn_l = QFormLayout(conn_box)
+        conn_l = QVBoxLayout(conn_box)
+        conn_l.setSpacing(10)
+        grade = GradeCampos(3)
+
         self.iface_combo = QComboBox()
         self.iface_combo.addItems(INTERFACES)
         self.iface_combo.currentIndexChanged.connect(self._rebuild_resource)
-        conn_l.addRow("Interface", self.iface_combo)
+        grade.add("Interface", self.iface_combo)
+
         self.board_spin = QSpinBox()
         self.board_spin.setRange(0, 15)
         self.board_spin.valueChanged.connect(self._rebuild_resource)
-        conn_l.addRow("Placa / board", self.board_spin)
+        grade.add("Placa", self.board_spin, "Numero da placa/board GPIB (o 0 de GPIB0).")
+
         self.addr_spin = QSpinBox()
         self.addr_spin.setRange(0, 30)
         self.addr_spin.setValue(20)
         self.addr_spin.valueChanged.connect(self._rebuild_resource)
-        conn_l.addRow("Endereço GPIB", self.addr_spin)
+        grade.add("Endereço", self.addr_spin, "Endereco GPIB do instrumento (0 a 30).")
+
         self.host_edit = QLineEdit("192.168.0.100")
         self.host_edit.textChanged.connect(self._rebuild_resource)
-        conn_l.addRow("Host (TCPIP)", self.host_edit)
-        self.resource_edit = QLineEdit("GPIB0::20::INSTR")
-        conn_l.addRow("Recurso VISA", self.resource_edit)
+        grade.add("Host (TCPIP)", self.host_edit, span=2)
+
         self.timeout_spin = QSpinBox()
         self.timeout_spin.setRange(1000, 300000)
         self.timeout_spin.setSingleStep(1000)
         self.timeout_spin.setValue(20000)
-        conn_l.addRow("Timeout (ms)", self.timeout_spin)
+        self.timeout_spin.setSuffix(" ms")
+        grade.add("Timeout", self.timeout_spin)
+
+        self.resource_edit = QLineEdit("GPIB0::20::INSTR")
+        self.resource_edit.setFont(theme.mono_font(9))
+        grade.add("Recurso VISA", self.resource_edit,
+                   "Montado a partir dos campos acima; pode ser editado a mao.", span=3)
+        conn_l.addWidget(grade)
 
         conn_btns = QHBoxLayout()
-        for text, slot in (("Listar VISA", self._list_visa), ("Conectar / *IDN?", self._connect),
-                            ("Reset", self._reset), ("Erros", self._read_errors)):
+        conn_btns.setSpacing(6)
+        for text, slot, prim in (("Listar VISA", self._list_visa, False),
+                                  ("Conectar / *IDN?", self._connect, True),
+                                  ("Reset", self._reset, False),
+                                  ("Erros", self._read_errors, False)):
             b = QPushButton(text)
+            if prim:
+                b.setObjectName("primary")
             b.clicked.connect(slot)
             conn_btns.addWidget(b)
-        conn_l.addRow(conn_btns)
+        conn_l.addLayout(conn_btns)
+
         self.dry_run_chk = QCheckBox("Modo simulação (não abre VISA, só registra os comandos)")
         self.dry_run_chk.setToolTip(
             "Permite exercitar todo o fluxo sem instrumento: os comandos sao registrados "
             "e a varredura devolve um trace sintetico. Use para conferir a sequencia "
             "antes de ir ao laboratorio.")
-        conn_l.addRow(self.dry_run_chk)
+        conn_l.addWidget(self.dry_run_chk)
+
+        estado = QHBoxLayout()
+        estado.setSpacing(7)
+        self.conn_badge = Badge("OFFLINE", "cinza")
+        estado.addWidget(self.conn_badge)
         self.conn_status = QLabel("Desconectado")
         self.conn_status.setWordWrap(True)
         self.conn_status.setStyleSheet(theme.CSS_MUTED)
-        conn_l.addRow(self.conn_status)
+        estado.addWidget(self.conn_status, 1)
+        conn_l.addLayout(estado)
         top.addWidget(conn_box, 3)
 
         # ---- preset ----
@@ -761,9 +788,14 @@ class ReceiverTab(QWidget):
             self._receiver = None
             self.conn_status.setText(f"Falha: {e}")
             self.conn_status.setStyleSheet(theme.CSS_FAIL)
+            self.conn_badge.setText("ERRO")
+            self.conn_badge.set_cor("vermelho")
             return
         self.conn_status.setText(f"Conectado: {idn}")
         self.conn_status.setStyleSheet(theme.CSS_OK)
+        simulado = self.dry_run_chk.isChecked()
+        self.conn_badge.setText("SIMULAÇÃO" if simulado else "ONLINE")
+        self.conn_badge.set_cor("ambar" if simulado else "verde")
 
     def _reset(self):
         try:

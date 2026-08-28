@@ -11,10 +11,11 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtGui import QFontMetrics
-from PySide6.QtWidgets import (QAbstractSpinBox, QComboBox, QFrame, QHBoxLayout,
-                                QLabel, QLineEdit, QListWidget, QListWidgetItem,
-                                QScrollArea, QSizePolicy, QSlider,
-                                QTableWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractSpinBox, QComboBox, QFrame, QGridLayout,
+                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
+                                QListWidgetItem, QPushButton, QScrollArea,
+                                QSizePolicy, QSlider, QTableWidget,
+                                QVBoxLayout, QWidget)
 
 from gui import theme
 
