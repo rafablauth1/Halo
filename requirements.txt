@@ -5,3 +5,7 @@ pandas>=2.0
 reportlab>=4.0
 pyvisa>=1.13
 pyvisa-py>=0.7
+
+# --- secao EMC (imunidade IEC 61000-4-4/4-5/4-11) ---
+Pillow>=10.0        # validador de fotos: abre e recorta a imagem do display
+python-docx>=1.1    # gera o laudo dos ensaios de imunidade em .docx
