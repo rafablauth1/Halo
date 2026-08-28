@@ -27,6 +27,8 @@ def main():
     _identidade_windows()
     app = QApplication(sys.argv)
     theme.apply_theme(app)   # paleta, fonte, icone e folha de estilo
+    from gui.paleta_dialog import aplicar_salvas
+    aplicar_salvas(app)      # cores personalizadas, se houver
     win = MainWindow()
     win.show()
     sys.exit(app.exec())

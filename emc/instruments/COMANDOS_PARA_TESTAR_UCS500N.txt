@@ -1,0 +1,110 @@
+COMANDOS GPIB PARA TESTAR MANUALMENTE NO UCS 500N
+====================================================
+(via Configurações > Terminal GPIB, no Automatizador de Ensaios)
+
+CONTEXTO — por que essa lista existe
+--------------------------------------
+Vasculhei as 88 páginas do manual do operador (User_Manual_UCS500N5_N7.pdf,
+V5.16) procurando um dicionário de comandos remotos (GPIB/serial). NÃO EXISTE
+nesse documento. Ele descreve:
+  - que a interface GPIB/IEEE-488 existe (item 20, pág. 12) e como configurar
+    o endereço no menu do painel frontal (Setup > F3 Interfaces, pág. 17);
+  - a operação manual pelos botões F1-F7 do painel;
+  - mas NENHUMA tabela de comandos ASCII/SCPI. O controle remoto de verdade
+    é feito só pelo software "iec.control" (Windows), cujo protocolo interno
+    não é documentado no manual do operador.
+
+Ou seja: os comandos abaixo são TENTATIVAS/PALPITES educados, baseados em
+convenções padrão de instrumentos GPIB (IEEE-488.2, SCPI) e no vocabulário
+que o próprio manual usa nos menus. NÃO são confirmados. A única forma de
+confirmar é testar e observar o painel físico do UCS 500N.
+
+COMO TESTAR
+-------------
+1. Abra o Automatizador de Ensaios > Configurações > Terminal GPIB.
+2. Escolha "EM TEST UCS 500N", clique Conectar.
+3. Digite um comando da lista abaixo e clique "Consultar (query)" (funciona
+   pra maioria); se não vier resposta nenhuma, tenta "Enviar (write)".
+4. Observe o PAINEL FÍSICO do UCS 500N — mudou de tela? Ligou "REMOTE"?
+   Ligou a saída? Dá erro? Anota o que aconteceu com cada comando testado.
+5. Me manda o resultado (o que funcionou, o que não) que eu atualizo
+   app/instruments/ucs500n_commands.py com os valores confirmados.
+
+PRIORIDADE 1 — comandos padrão IEEE-488.2 (bem prováveis de funcionar,
+são obrigatórios em qualquer instrumento GPIB compatível):
+  *IDN?
+  *RST
+  *CLS
+  *OPC?
+  *TST?
+  *WAI
+
+PRIORIDADE 2 — convenções SCPI comuns pra ligar/desligar saída
+(tentar cada uma, ver se alguma liga o "TEST ON" de verdade):
+  OUTP ON
+  OUTP OFF
+  OUTPUT ON
+  OUTPUT OFF
+  OUTP:STAT ON
+  OUTP:STAT OFF
+  OUTP:STATE ON
+  OUTP:STATE OFF
+
+PRIORIDADE 3 — baseado no vocabulário do próprio manual (menus/telas
+usam esses termos, vale tentar como comando literal):
+  TEST ON
+  TEST OFF
+  TEST START
+  TEST STOP
+  START
+  STOP
+  REMOTE
+  LOCAL
+  RUN
+
+PRIORIDADE 4 — comandos de trigger (disparar um pulso/evento único):
+  *TRG
+  TRIG
+  TRIGGER
+  TRIG:IMM
+
+OBSERVAÇÃO SOBRE REMOTE/LOCAL
+--------------------------------
+"REMOTE" que já aparece no painel normalmente é controlado pelo próprio
+protocolo GPIB (linha REN do barramento), não por um comando de texto — é
+o VISA/NI-MAX que já ativa isso ao conectar. Então isso já está confirmado
+funcionando; não precisa ficar testando comando de texto pra isso.
+
+CAMINHO MAIS CONFIÁVEL (se der certo de conseguir)
+-----------------------------------------------------
+Ao invés de tentar adivinhar, o jeito mais garantido de pegar os comandos
+reais é capturar o tráfego GPIB enquanto o software oficial "iec.control"
+controla o UCS 500N de verdade (se você tiver acesso a ele nesse PC ou em
+outro com NI-MAX). O NI-MAX tem uma ferramenta de log/trace de comunicação
+("NI I/O Trace") que grava cada comando que o iec.control manda pro
+instrumento — isso revela o protocolo real, sem precisar adivinhar nada.
+Se você tiver ou conseguir o iec.control instalado em algum PC, isso
+resolveria de vez.
+
+ATUALIZAÇÃO — existe um manual de comandos remotos de verdade
+-----------------------------------------------------------------
+Confirmado (lendo o manual oficial do software iec.control, versão 10.2.0,
+fabricante AMETEK CTS — dono atual da marca EM TEST): existe um documento
+separado chamado literalmente "Manual for remote commands". Ele NÃO é
+publicado avulso na internet — só vem junto da instalação do iec.control,
+na pasta:
+
+  C:\Users\Public\Documents\AMETEK CTS\iec.control\Manual\
+
+Duas formas de conseguir:
+  1. Se o iec.control já estiver instalado em QUALQUER PC da empresa
+     (mesmo que não seja usado pra nada hoje), esse manual já está
+     nessa pasta — só copiar.
+  2. Pedir direto pra AMETEK CTS / EM TEST (fabricante) esse documento
+     pelo nome — como é um manual oficial deles, o suporte técnico
+     deveria fornecer sem muita burocracia.
+
+Bônus: o mesmo software grava um arquivo "Monitor.txt" com todo o
+tráfego de comandos enviado ao gerador durante o uso normal — se algum
+dia o iec.control rodar de verdade (mesmo só uma demo), esse arquivo
+revela os comandos reais na hora, sem precisar de mais nada.

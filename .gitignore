@@ -16,12 +16,26 @@ gui/_assets/
 
 # ---- REGISTROS REAIS DO LABORATORIO ----
 # O cadastro de equipamentos traz numero de serie, patrimonio e os dados
-# dos certificados de calibracao do LABELO. Este repositorio e publico,
+# dos certificados de calibracao do laboratorio. Este repositorio e
+# publico,
 # entao esses arquivos ficam de fora de proposito.
 # Para levar o cadastro a outra maquina, copie a pasta na mao ou use
 #   git add -f dados/equipamentos
 # depois de tornar o repositorio privado.
 dados/equipamentos/
+
+# ---- DADOS DE ENSAIO DA SECAO EMC ----
+# app.db traz projetos, EUTs e resultados reais; os arquivos de projeto e
+# os laudos idem. Repositorio publico: nada disso sobe.
+data/app.db
+data/app.db-journal
+data/projetos/
+data/data_dir_location.txt
+reports/*.docx
+reports/*.pdf
+!reports/exemplo_*.pdf
+aparencia.json
+dados/aparencia.json
 
 # ---- saidas de ensaio ----
 relatorio_*.pdf

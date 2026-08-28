@@ -410,24 +410,194 @@ class MainWindow(QMainWindow):
         right.addWidget(self.hsplit_result, 1)
         right.addWidget(self.verdict_bar)
 
-        self.tabs.addTab(central, "Análise")
+        # ---- as tres telas de emissao ficam sob a secao CISPR 15 ----
+        self.cispr_tabs = QTabWidget()
+        self.cispr_tabs.setDocumentMode(True)
+        self.cispr_tabs.addTab(central, "Análise")
 
         self.receiver_tab = ReceiverTab(self)
         self.receiver_tab.trace_acquired.connect(self._on_trace_acquired)
         self.receiver_tab.final_measurement_done.connect(self._on_final_measurement)
         self.receiver_tab.provedor_de_picos = self._picos_para_medicao_final
-        self.tabs.addTab(self.receiver_tab, "Receiver / GPIB")
+        self.cispr_tabs.addTab(self.receiver_tab, "Receiver / GPIB")
 
         self.equip_tab = EquipamentosTab(self)
         self.equip_tab.catalogo_mudou.connect(self._refresh_chain_list)
-        self.tabs.addTab(self.equip_tab, "Equipamentos")
+        self.cispr_tabs.addTab(self.equip_tab, "Equipamentos")
+
+        self.tabs.addTab(self.cispr_tabs, "CISPR 15  ·  Emissão")
+
+        # ---- secao EMC: ensaios de imunidade (IEC 61000-4-4/4-5/4-11) ----
+        # Carregada aqui e nao no topo do arquivo: se o pacote emc/ nao
+        # estiver presente, o HALO continua abrindo so com a parte de
+        # emissao em vez de morrer na importacao.
+        self.emc_section = None
+        try:
+            from emc.core.db import init_db
+            from gui.emc_section import EmcSection
+            init_db()
+            self.emc_section = EmcSection(self)
+            self.tabs.addTab(self.emc_section, "EMC  ·  Imunidade")
+        except Exception as e:
+            aviso = QLabel(
+                "A seção EMC (imunidade) não pôde ser carregada:\n\n"
+                f"{type(e).__name__}: {e}\n\n"
+                "A parte de emissão CISPR 15 continua funcionando normalmente.")
+            aviso.setWordWrap(True)
+            aviso.setAlignment(Qt.AlignCenter)
+            aviso.setStyleSheet(theme.CSS_FAIL)
+            self.tabs.addTab(aviso, "EMC  ·  Imunidade")
 
         self._load_method()
         self.method_combo.currentIndexChanged.connect(self._load_method)
 
+        self._montar_menus()
+
         # roda do mouse: rola a tela em vez de trocar o valor do campo
-        # sob o cursor (vale para as tres abas)
+        # sob o cursor (vale para todas as abas)
         desarmar_roda(self)
+
+    # ---------------- barra de menus ----------------
+    def _montar_menus(self):
+        """Barra de menus no estilo dos programas de bancada: tudo o que a
+        interface faz também está aqui, agrupado por assunto e subdividido.
+
+        Vale a repetição com os botões das telas: num programa de ensaio o
+        operador aprende o caminho do menu e passa a usá-lo sem procurar o
+        botão, e quem chega novo descobre o que existe percorrendo os menus
+        em vez de clicar em cada aba."""
+        barra = self.menuBar()
+
+        def acao(menu, texto, slot, atalho: str = "", dica: str = ""):
+            a = menu.addAction(texto)
+            if atalho:
+                a.setShortcut(QKeySequence(atalho))
+            if dica:
+                a.setStatusTip(dica)
+            a.triggered.connect(slot)
+            return a
+
+        def ir(secao: int, aba: int = 0):
+            def _f():
+                self.tabs.setCurrentIndex(secao)
+                if secao == 0:
+                    self.cispr_tabs.setCurrentIndex(aba)
+            return _f
+
+        # ---------------------------------------------------------- Arquivo
+        m = barra.addMenu("&Arquivo")
+        sub = m.addMenu("Importar trace")
+        acao(sub, "De arquivo (CSV / ASCII R&&S)…", self._load_file, "Ctrl+O")
+        acao(sub, "Exemplo sintético da norma", self._load_sample)
+        m.addSeparator()
+        sub = m.addMenu("Exportar")
+        acao(sub, "Gráfico como PNG…", self._export_png)
+        acao(sub, "Relatório em PDF…", self._export_pdf, "Ctrl+P")
+        m.addSeparator()
+        acao(m, "Limpar traces carregados", self._clear_traces)
+        m.addSeparator()
+        acao(m, "Sair", self.close, "Ctrl+Q")
+
+        # ------------------------------------------------------------ Ensaio
+        m = barra.addMenu("&Ensaio")
+        sub = m.addMenu("Emissão — CISPR 15")
+        acao(sub, "Análise do espectro", ir(0, 0), "Ctrl+1")
+        acao(sub, "Receiver / GPIB", ir(0, 1), "Ctrl+2")
+        acao(sub, "Equipamentos e certificados", ir(0, 2), "Ctrl+3")
+        sub = m.addMenu("Imunidade — EMC")
+        if self.emc_section is not None:
+            for nome in self.emc_section.ABAS:
+                acao(sub, nome,
+                      (lambda n=nome: (self.tabs.setCurrentIndex(1),
+                                        self.emc_section.ir_para(n))))
+        else:
+            sub.addAction("(seção não carregada)").setEnabled(False)
+        m.addSeparator()
+        acao(m, "Avaliar contra o limite", self._evaluate, "F5")
+        acao(m, "Medição final nos picos…", self._menu_medicao_final, "F6")
+
+        # ------------------------------------------------------------- Norma
+        m = barra.addMenu("&Norma")
+        self._menu_normas = m.addMenu("Selecionar método")
+        self._preencher_menu_normas()
+        m.addSeparator()
+        acao(m, "Editar limites da norma atual…", self._edit_limits)
+        acao(m, "Gerenciar normas (novo / duplicar / excluir)…", self._manage_standards)
+        m.addSeparator()
+        acao(m, "Incertezas e regra de decisão…", self._edit_uncertainty)
+
+        # ---------------------------------------------------------- Correções
+        m = barra.addMenu("&Correções")
+        acao(m, "Tabelas de correção…", self._manage_corrections)
+        acao(m, "Equipamentos e certificados…", ir(0, 2))
+
+        # ----------------------------------------------------------- Exibir
+        m = barra.addMenu("E&xibir")
+        sub = m.addMenu("Painéis")
+        a = sub.addAction("Coluna de controles")
+        a.setCheckable(True); a.setChecked(True); a.setShortcut(QKeySequence("F9"))
+        a.toggled.connect(lambda on: self.painel_btn.setChecked(not on))
+        a = sub.addAction("Tabela de picos ao lado")
+        a.setCheckable(True); a.setShortcut(QKeySequence("F10"))
+        a.toggled.connect(self.tabela_btn.setChecked)
+        sub = m.addMenu("Gráfico")
+        a = sub.addAction("Fundo claro (como no laudo)")
+        a.setCheckable(True)
+        a.toggled.connect(self.theme_btn.setChecked)
+        m.addSeparator()
+        acao(m, "Aparência e cores…", self._abrir_paleta)
+
+        # ------------------------------------------------------------- Ajuda
+        m = barra.addMenu("A&juda")
+        acao(m, "Avisos técnicos em aberto…", self._mostrar_avisos)
+        acao(m, f"Sobre o {theme.APP_NAME}…", self._sobre)
+
+    def _preencher_menu_normas(self):
+        self._menu_normas.clear()
+        for i in range(self.method_combo.count()):
+            rotulo = self.method_combo.itemText(i)
+            a = self._menu_normas.addAction(rotulo)
+            a.setCheckable(True)
+            a.setChecked(i == self.method_combo.currentIndex())
+            a.triggered.connect(lambda _=False, k=i: self.method_combo.setCurrentIndex(k))
+
+    def _menu_medicao_final(self):
+        """Leva para a sub-aba de medição final, já na seção certa."""
+        self.tabs.setCurrentIndex(0)
+        self.cispr_tabs.setCurrentIndex(1)
+        for i in range(self.receiver_tab.tabs.count()):
+            if "final" in self.receiver_tab.tabs.tabText(i).lower():
+                self.receiver_tab.tabs.setCurrentIndex(i)
+                break
+
+    def _abrir_paleta(self):
+        from gui.paleta_dialog import PaletaDialog
+        PaletaDialog(self).exec()
+
+    def _mostrar_avisos(self):
+        QMessageBox.information(
+            self, "Avisos técnicos em aberto",
+            "Pontos que dependem de decisão do laboratório ou de validação:\n\n"
+            "• Tempo de medição em quase-pico: a configuração usa 50 ms, contra "
+            "constantes de descarga de 160–550 ms da CISPR 16-1-1. O erro tende "
+            "a APROVAR.\n\n"
+            "• Escopo 2014: a CISPR 15:2018 aperta 200–300 MHz em até 10 dB.\n\n"
+            "• Antena loop: a norma expressa o limite em dB(µA/m); a tabela "
+            "transcrita está em dBµA. Confirmar antes de usar.\n\n"
+            "• Comandos SCPI do catálogo NÃO foram validados contra hardware.\n\n"
+            "• Cláusula 5 (cliques) não implementada.\n\n"
+            "Detalhes em instrucoes/.")
+
+    def _sobre(self):
+        QMessageBox.about(
+            self, f"Sobre o {theme.APP_NAME}",
+            f"<b>{theme.APP_NAME}</b> {theme.APP_VERSION}<br>"
+            f"{theme.APP_TAGLINE}<br><br>"
+            "Emissão conforme ABNT NBR IEC/CISPR 15:2014 e imunidade "
+            "IEC 61000-4-4 / 4-5 / 4-11.<br><br>"
+            "<i>Os comandos SCPI pré-setados não foram validados contra "
+            "hardware real. Confira no manual do seu instrumento antes de "
+            "usar em ensaio acreditado.</i>")
 
     # ---------------- helpers de aparencia ----------------
     @staticmethod

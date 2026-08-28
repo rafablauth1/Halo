@@ -136,6 +136,41 @@ M3_OUTLINE, M3_OUTLINE_VARIANT, M3_OUTLINE_MID = BORDER_2, BORDER, BORDER
 M3_ERROR, M3_ERROR_CONTAINER = FAIL, FAIL_BG
 M3_TERTIARY = GLOW
 
+# Copia congelada dos valores de fabrica. O editor de aparencia compara
+# com ela para gravar SO o que foi alterado, e para poder restaurar.
+PADRAO = {
+    "ACCENT": ACCENT, "ACCENT_ON": ACCENT_ON, "ACCENT_HI": ACCENT_HI,
+    "ACCENT_LO": ACCENT_LO, "ACCENT_BG": ACCENT_BG,
+    "BG": BG, "SURFACE": SURFACE, "SURFACE_2": SURFACE_2, "SURFACE_3": SURFACE_3,
+    "FIELD": FIELD, "FIELD_ALT": FIELD_ALT,
+    "BORDER": BORDER, "BORDER_2": BORDER_2,
+    "TEXT": TEXT, "TEXT_MUTED": TEXT_MUTED, "TEXT_DIM": TEXT_DIM,
+    "GLOW": GLOW, "GLOW_LO": GLOW_LO,
+}
+
+
+def sincronizar_apelidos() -> None:
+    """Reconstroi os apelidos M3 a partir das cores atuais.
+
+    O QSS foi escrito com os nomes do Material 3 (M3_SURFACE, M3_PRIMARY...),
+    que sao apelidos calculados uma vez na importacao. Quando o editor de
+    aparencia troca uma cor base, os apelidos ficam com o valor antigo e o
+    QSS sairia metade novo, metade velho -- por isso esta funcao e chamada
+    logo antes de reconstruir a folha de estilo."""
+    g = globals()
+    g["M3_PRIMARY"], g["M3_ON_PRIMARY"] = ACCENT, ACCENT_ON
+    g["M3_PRIMARY_CONTAINER"] = ACCENT_BG
+    g["M3_SECONDARY_CONTAINER"], g["M3_ON_SECONDARY_CONTAINER"] = SURFACE_3, TEXT
+    g["M3_SURFACE"], g["M3_SURFACE_LOWEST"], g["M3_SURFACE_LOW"] = BG, FIELD, SURFACE
+    g["M3_SURFACE_CONTAINER"], g["M3_SURFACE_HIGH"] = SURFACE_2, SURFACE_3
+    g["M3_ON_SURFACE"], g["M3_ON_SURFACE_VARIANT"] = TEXT, TEXT_MUTED
+    g["M3_OUTLINE"], g["M3_OUTLINE_VARIANT"], g["M3_OUTLINE_MID"] = BORDER_2, BORDER, BORDER
+    g["M3_ERROR"], g["M3_ERROR_CONTAINER"] = FAIL, FAIL_BG
+    g["M3_TERTIARY"] = GLOW
+    for nome in ("CSS_MUTED", "CSS_DIM", "CSS_OK", "CSS_WARN", "CSS_FAIL"):
+        pass  # os CSS_* sao reconstruidos abaixo
+
+
 # Atalhos para setStyleSheet pontual em labels de status
 CSS_MUTED = f"color:{TEXT_MUTED}; font-size:11px;"
 CSS_DIM = f"color:{TEXT_DIM}; font-size:11px;"
